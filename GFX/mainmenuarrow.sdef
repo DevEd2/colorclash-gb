@@ -1,0 +1,6 @@
+; Sprite definition file: Title_MenuArrow
+    db      $80,$80,$01,$08
+    db      $80,$80,$02,$09
+    db      $88,$80,$03,$0a
+    db      $88,$80,$04,$0b
+    db      $00
