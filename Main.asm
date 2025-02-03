@@ -9,10 +9,10 @@
 
     include "hardware.inc/hardware.inc"
 
-def BUILD_DEBUG = 1
+def BUILD_DEBUG = 0
 def STACK_TOP = $e000
 
-def BUILD_LOGO = 1 ; 0 = Karma Studios, 1 = Revival Studios
+def BUILD_LOGO = 0 ; 0 = Karma Studios, 1 = Revival Studios
 def BUILD_NAME = 0 ; 0 = Colorclash, 1 = Avalanche
 
 def BIT_A           equ 0
@@ -329,8 +329,12 @@ ProgramStart:
     ; any code that should be run on cold boot only goes here
 :   ld      a,WARM_BOOT_MAGIC
     ldh     [hWarmBoot],a
+if BUILD_DEBUG
     jp      GM_Debug
-    
+else
+    jp      GM_Logo
+endc
+
 ; =============================================================================
 
 NonColorLockout:
@@ -435,6 +439,7 @@ VBALockoutText:
 ; =============================================================================
 
 ErrorScreen:
+if BUILD_DEBUG
     ; this code is such a fucking mess...
     di
     ld      [hSP],sp
@@ -740,7 +745,9 @@ def NUM_ERROR_STRINGS = (@ - ErrorStringPointers) / 2
 .unknown
     db  "UNKNOWN ERROR",0
     ;    ####################
-
+else
+    jr      @
+endc
 ; =============================================================================
 ; Interrupt handlers
 ; =============================================================================
@@ -1304,17 +1311,21 @@ _OAMDMA_End:
 Font:   incbin  "GFX/font.1bpp"
 .end
 
+if BUILD_DEBUG
 Pal_BSOD:
     rgb  0, 0,31
     rgb  0, 0, 0
     rgb  0, 0, 0
     rgb 31,31,31
+endc
 
 ; =============================================================================
 ; Game modes
 ; =============================================================================
 
+if BUILD_DEBUG
     include "GameModes/DebugMenu.asm"
+endc
     include "GameModes/Logos.asm"
     include "GameModes/Title.asm"
     include "GameModes/Game.asm"  
