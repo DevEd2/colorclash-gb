@@ -269,7 +269,7 @@ GameLoop:
     inc     a
     daa
     cp      $a0
-    jr      z,:+
+    jr      nz,:+
     ld      a,$99
 :   ld      [Game_Score],a
 :   jr      .skipbullet
@@ -328,6 +328,71 @@ GameLoop:
     sub     c
     set     3,a
     ld      [hl+],a
+    ; draw score
+    ; digit 1 y
+    ld      [hl],8
+    inc     l
+    ; digit 1 x
+    ld      [hl],35 + 8
+    inc     l
+    ; digit 1 tile
+    ld      a,[Game_Score]
+    swap    a
+    and     $f
+    add     a
+    add     $70
+    ld      [hl+],a
+    ; digit 1 attribute
+    ld      [hl],$e
+    inc     l
+    ; digit 2 y
+    ld      [hl],8
+    inc     l
+    ; digit 2 x
+    ld      [hl],(35 + 8) + 5
+    inc     l
+    ; digit 2 tile
+    ld      a,[Game_Score]
+    and     $f
+    add     a
+    add     $70
+    ld      [hl+],a
+    ; digit 2 attribute
+    ld      [hl],$e
+    inc     l
+
+
+    ; digit 3 y
+    ld      [hl],8
+    inc     l
+    ; digit 3 x
+    ld      [hl],(35 + 8) + 10
+    inc     l
+    ; digit 3 tile
+    ld      a,[Game_Score+1]
+    swap    a
+    and     $f
+    add     a
+    add     $70
+    ld      [hl+],a
+    ; digit 3 attribute
+    ld      [hl],$e
+    inc     l
+    ; digit 4 y
+    ld      [hl],8
+    inc     l
+    ; digit 4 x
+    ld      [hl],(35 + 8) + 15
+    inc     l
+    ; digit 4 tile
+    ld      a,[Game_Score+1]
+    and     $f
+    add     a
+    add     $70
+    ld      [hl+],a
+    ; digit 4 attribute
+    ld      [hl],$e
+    inc     l
 
     jp      GameLoop
 
