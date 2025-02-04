@@ -6,7 +6,7 @@ def GAME_PACE = 8
 def GAME_MAX_SPEED = 99
 
 Game_RAM:
-Game_Score:         ds  2   ; 4 BCD digits
+Game_Score:         ds  4   ; 4 digits
 Game_Health:        db  ; maximum of 3
 Game_Blocks:        ds  2*5 ; y pos, color
 Game_PlayerPos:     db  ; which column the player is in
@@ -257,33 +257,19 @@ GameLoop:
     jr      z,.match_checkfor5hits
     xor     a
     ld      [Game_HitCount],a
-.match_give1point
-    and     a
-    ld      a,[Game_Score+1]
-    inc     a
-.match_givepoints
-    daa
-    ld      [Game_Score+1],a
-    jr      nc,:++
-    ld      a,[Game_Score]
-    inc     a
-    daa
-    cp      $a0
-    jr      nz,:+
-    ld      a,$99
-:   ld      [Game_Score],a
-:   jr      .skipbullet
+    call    Game_Add1Point
+    jr      .skipbullet
 .match_checkfor5hits
-
     ld      a,[Game_HitCount]
     inc     a
     cp      4
     ld      [Game_HitCount],a
-    jr      c,.match_give1point
-    and     a
-    ld      a,[Game_Score+1]
-    add     $10
-    jr      .match_givepoints
+    jr      nc,:+
+    call    Game_Add1Point
+    jr      .skipbullet
+:   call    Game_Add10Points
+    jr      .skipbullet
+
 .mismatch
     ; reset hit count
     xor     a
@@ -337,7 +323,6 @@ GameLoop:
     inc     l
     ; digit 1 tile
     ld      a,[Game_Score]
-    swap    a
     and     $f
     add     a
     add     $70
@@ -352,7 +337,7 @@ GameLoop:
     ld      [hl],(35 + 8) + 5
     inc     l
     ; digit 2 tile
-    ld      a,[Game_Score]
+    ld      a,[Game_Score+1]
     and     $f
     add     a
     add     $70
@@ -369,8 +354,7 @@ GameLoop:
     ld      [hl],(35 + 8) + 10
     inc     l
     ; digit 3 tile
-    ld      a,[Game_Score+1]
-    swap    a
+    ld      a,[Game_Score+2]
     and     $f
     add     a
     add     $70
@@ -385,7 +369,7 @@ GameLoop:
     ld      [hl],(35 + 8) + 15
     inc     l
     ; digit 4 tile
-    ld      a,[Game_Score+1]
+    ld      a,[Game_Score+3]
     and     $f
     add     a
     add     $70
@@ -449,6 +433,44 @@ GameLoop:
     ld      a,4
 :   ld      [Game_CurrentColor],a
     pop     af
+    ret
+
+Game_Add1Point:
+    ld      a,[Game_Score+3]
+    inc     a
+    cp      10
+    ld      [Game_Score+3],a
+    ret     nz
+    xor     a
+    ld      [Game_Score+3],a
+Game_Add10Points:
+    ld      a,[Game_Score+2]
+    inc     a
+    cp      10
+    ld      [Game_Score+2],a
+    ret     nz
+    xor     a
+    ld      [Game_Score+2],a
+Game_Add100Points:
+    ld      a,[Game_Score+1]
+    inc     a
+    cp      10
+    ld      [Game_Score+1],a
+    ret     nz
+    xor     a
+    ld      [Game_Score+1],a
+Game_Add1000Points:
+    ld      a,[Game_Score]
+    inc     a
+    cp      10
+    ld      [Game_Score],a
+    ret     nz
+    ; cap score to 9999
+    ld      a,9
+    ld      [Game_Score],a
+    ld      [Game_Score+1],a
+    ld      [Game_Score+2],a
+    ld      [Game_Score+3],a
     ret
 
 Game_ProcessGems:
