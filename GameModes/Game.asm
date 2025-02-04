@@ -484,9 +484,21 @@ Game_ProcessGems:
     ld      bc,2
     rept    5
     inc     [hl]
+    ld      a,[hl]
+    cp      104
+    jr      nc,.gameover
     add     hl,bc
     endr
     ret
+.gameover
+    call    PalFadeOutWhite
+:   halt
+    call    Pal_DoFade
+    ld      a,[sys_FadeState]
+    bit     0,a
+    jr      nz,:-
+    call    LCDOff
+    jr      @
 
 Game_DrawGems:
     ld      hl,Game_GemRAM
