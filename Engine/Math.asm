@@ -22,15 +22,15 @@
 ; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ; ======================================================================
 
-def INC_MUL     = 1 ; multiplication
-def INC_DIV     = 1 ; division
-def INC_POW     = 1 ; square (NYI)
-def INC_SQRT    = 1 ; square root
-def INC_SINCOS  = 1 ; sine + cosine
-def INC_ATAN2   = 1 ; 2-argument arctangent
+def INC_MUL     = 0 ; multiplication
+def INC_DIV     = 0 ; division
+def INC_POW     = 0 ; square (NYI)
+def INC_SQRT    = 0 ; square root
+def INC_SINCOS  = 0 ; sine + cosine
+def INC_ATAN2   = 0 ; 2-argument arctangent
 def INC_RAND    = 1 ; 32-bit PRNG
-def INC_LERP    = 1 ; linear interpolation (NYI)
-def INC_HEX2BCD = 1 ; hexadecimal to BCD
+def INC_LERP    = 0 ; linear interpolation (NYI)
+def INC_HEX2BCD = 0 ; hexadecimal to BCD
 
 macro neg
     cpl
@@ -139,7 +139,6 @@ Math_SinCos:
     ld      e,l
     pop     hl
     ret
-endc
 
 ; Just calculate the sine of an 8-bit angle
 ; INPUT:     a = angle
@@ -160,6 +159,7 @@ Math_Cosine:
     ld      b,0
     ld      hl,Math_CosineTable
     jp      Math_LUT16
+endc
 
 if INC_HEX2BCD
 Math_Hex2BCD8:
@@ -304,56 +304,22 @@ Math_Random:
 ; Returns a random number from 0 to a given 8-bit integer.
 ; INPUT:    a = range + 1
 ; OUTPUT:   a = result
-; DESTROYS: bc, hl
+; DESTROYS: b, de, hl
 Math_RandRange:
     push    af
     call    Math_Random
-    push    hl
-    ld      h,d
-    ld      l,e
-    pop     de
+    ld      d,h :: ld e,l
     pop     af
     ld      hl,0
     ld      b,h
-    add     a
-    jr      nc,:+  
-    ld      h,d
-    ld      l,e
-:   add     hl,hl
-    rla
-    jr      nc,:+
-    add     hl,de
-    adc     b
-:   add     hl,hl
-    rla
-    jr      nc,:+
-    add     hl,de
-    adc     b
-:   add     hl,hl
-    rla
-    jr      nc,:+
-    add     hl,de
-    adc     b
-:   add     hl,hl
-    rla
-    jr      nc,:+
-    add     hl,de
-    adc     b
-:   add     hl,hl
-    rla
-    jr      nc,:+
-    add     hl,de
-    adc     b
-:   add     hl,hl
-    rla
-    jr      nc,:+
-    add     hl,de
-    adc     b
-:   add     hl,hl
-    rla
-    ret     nc
-    add     hl,de
-    adc     a,b
+    add a :: jr nc,:+ :: ld h,d :: ld l,e
+:   add hl,hl :: rla :: jr nc,:+ :: add hl,de :: adc b
+:   add hl,hl :: rla :: jr nc,:+ :: add hl,de :: adc b
+:   add hl,hl :: rla :: jr nc,:+ :: add hl,de :: adc b
+:   add hl,hl :: rla :: jr nc,:+ :: add hl,de :: adc b
+:   add hl,hl :: rla :: jr nc,:+ :: add hl,de :: adc b
+:   add hl,hl :: rla :: jr nc,:+ :: add hl,de :: adc b
+:   add hl,hl :: rla :: ret nc :: add hl,de :: adc b
     ret
 endc
 

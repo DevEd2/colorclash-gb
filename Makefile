@@ -1,4 +1,4 @@
-PROJECTNAME=game
+PROJECTNAME=colorclash
 
 $(PROJECTNAME).gb: *.asm Engine/*.asm GameModes/*.asm Audio/*.asm Audio/Music/*.asm Audio/SFX/*.asm
 	rgbasm -o $(PROJECTNAME).obj -p 255 Main.asm

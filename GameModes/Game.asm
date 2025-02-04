@@ -1,17 +1,26 @@
 section "Game RAM",wram0
 
+; these values may need tweaking
+def GAME_START_SPEED = 8
+def GAME_PACE = 8
+def GAME_MAX_SPEED = 99
+
 Game_RAM:
-Game_Score:         ds  5   ; 5 digits
+Game_Score:         ds  2   ; 4 BCD digits
 Game_Health:        db  ; maximum of 3
 Game_Blocks:        ds  2*5 ; y pos, color
 Game_PlayerPos:     db  ; which column the player is in
 Game_PlayerX:       db  ; actual X position
 Game_CurrentColor:  db  ; selected color
+Game_BulletPos:     db  ; which column the bullet is in
 Game_BulletX:       db  ; which column the player's bullet is in (-1 = none present)
 Game_BulletY:       db  ; Y position of bullet
 Game_BulletColor:   db  ; color of bullet
 Game_LastColorHit:  db  ; color of last block hit
 Game_HitCount:      db  ; number of times in a row you've hit a block of a given color
+Game_CurrentSpeed:  db  ; number of subpixels blocks move down per frame
+Game_BlockSubpixel: db  ; current subpixel of blocks
+Game_SpeedPacer:    db  ; how fast speed increases
 
 Game_GemRAM:        ds  5*2
 
@@ -62,6 +71,8 @@ GM_Game:
     ld      hl,Game_ShipPalette
     ld      a,13
     call    LoadPal
+    ld      a,14
+    call    LoadPal
 
     call    CopyPalettes
 
@@ -83,7 +94,7 @@ GM_Game:
     ld      de,_VRAM
     call    DecodeWLE
     ; load ship graphics
-    ld      hl,Game_ShipTiles
+    ld      hl,Game_SpriteTiles
     call    DecodeWLE
 
     xor     a
@@ -94,6 +105,12 @@ GM_Game:
     ld      a,-1
     ld      [Game_BulletX],a
     ld      [Game_LastColorHit],a
+    ld      a,-16
+    ld      [Game_BulletY],a
+    ld      a,GAME_START_SPEED
+    ld      [Game_CurrentSpeed],a
+    ld      a,GAME_PACE
+    ld      [Game_SpeedPacer],a
 
     ; init gems
     ld      hl,Game_GemRAM
@@ -153,13 +170,7 @@ GameLoop:
     jr      nz,:-
 .donebeam
 
-    ; now we can run game logic and draw the gems
-    ; TODO: run game logic
-    call    Game_ProcessGems
-    call    Game_DrawGems
-    call    Game_DrawShip
-
-    ; input
+    ; player controls
     ldh     a,[hPressedButtons]
     bit     BIT_A,a
     call    nz,.shoot
@@ -185,10 +196,156 @@ GameLoop:
     add     36 + 8
     ld      [Game_PlayerX],a
 
-    jr      GameLoop
+    call    Game_ProcessGems
+    ; update bullet
+    ld      a,[Game_BulletY]
+    cp      -16
+    jp      z,.skipbullet
+    sub     8
+    ld      [Game_BulletY],a
+    ; check for collisions
+    ld      b,a
+    ld      hl,Game_GemRAM
+    ld      a,[Game_BulletPos]
+    add     a
+    add     l
+    ld      l,a
+    jr      nc,:+
+    inc     h
+:   ; check Y position of block
+    ld      a,[hl+]
+    add     16  ; account for vertical offset
+    cp      b
+    jp      c,.skipbullet
+    ld      a,[Game_SpeedPacer]
+    dec     a
+    ld      [Game_SpeedPacer],a
+    jr      nz,:+
+    ld      a,GAME_PACE
+    ld      [Game_SpeedPacer],a
+    ld      a,[Game_CurrentSpeed]
+    cp      GAME_MAX_SPEED
+    jr      z,:+
+    inc     a
+    ld      [Game_CurrentSpeed],a
+:   ld      a,-16
+    ld      [Game_BulletY],a
+    ld      a,[Game_BulletColor]
+    ld      b,a
+    ld      a,[hl-]
+    cp      b
+    jr      nz,.mismatch
+.match
+    ; reset block's Y pos
+    xor     a
+    ld      [hl+],a
+    ; randomize color
+    push    hl
+    ld      a,5
+    push    bc
+    call    Math_RandRange
+    pop     bc
+    pop     hl
+    ld      [hl+],a
+    ; update score
+    ; if we've hit 5 or more blocks of the same color in a row, 10 points are awarded
+    ; otherwise, 1 point is awarded
+    ld      a,[Game_LastColorHit]
+    cp      b
+    ld      a,b
+    ld      [Game_LastColorHit],a
+    jr      z,.match_checkfor5hits
+    xor     a
+    ld      [Game_HitCount],a
+.match_give1point
+    and     a
+    ld      a,[Game_Score+1]
+    inc     a
+.match_givepoints
+    daa
+    ld      [Game_Score+1],a
+    jr      nc,:++
+    ld      a,[Game_Score]
+    inc     a
+    daa
+    cp      $a0
+    jr      z,:+
+    ld      a,$99
+:   ld      [Game_Score],a
+:   jr      .skipbullet
+.match_checkfor5hits
+
+    ld      a,[Game_HitCount]
+    inc     a
+    cp      4
+    ld      [Game_HitCount],a
+    jr      c,.match_give1point
+    and     a
+    ld      a,[Game_Score+1]
+    add     $10
+    jr      .match_givepoints
+.mismatch
+    ; reset hit count
+    xor     a
+    ld      [Game_HitCount],a
+    ; nudge all blocks down 8 pixels
+    push    hl
+    ld      hl,Game_GemRAM
+    rept    5
+    ld      a,[hl]
+    add     8
+    ld      [hl+],a
+    inc     hl
+    endr
+    jr      .skipbullet
+.skipbullet
+    ; draw stuff
+    call    Game_DrawGems
+    call    Game_DrawShip
+    ; draw bullet
+    ; HL should be a pointer to the last free slot in the OAM buffer
+    ; bullet Y
+    ld      a,[Game_BulletY]
+    add     16
+    ld      [hl+],a
+    ld      a,[Game_BulletX]
+    add     8
+    ld      [hl+],a
+    ; bullet tile
+    ld      a,[Game_BulletColor]
+    ld      c,a
+    add     a
+    add     a
+    ld      b,a
+    ldh     a,[hGlobalTimer]
+    add     a
+    and     2
+    add     b
+    add     $5c
+    ld      [hl+],a
+    ; bullet attribute
+    ld      a,4
+    sub     c
+    set     3,a
+    ld      [hl+],a
+
+    jp      GameLoop
 
 .shoot
-    ; TODO
+    push    af
+    ld      a,[Game_BulletY]
+    cp      -16
+    jr      nz,:+
+    ld      a,[Game_PlayerPos]
+    ld      [Game_BulletPos],a
+    ld      a,[Game_CurrentColor]
+    ld      [Game_BulletColor],a
+    ld      a,136-10
+    ld      [Game_BulletY],a
+    ld      a,[Game_PlayerX]
+    sub     12
+    ld      [Game_BulletX],a
+:   pop     af
     ret
 .left
     push    af
@@ -230,7 +387,18 @@ GameLoop:
     ret
 
 Game_ProcessGems:
-    ; TODO
+    ld      a,[Game_CurrentSpeed]
+    ld      b,a
+    ld      a,[Game_BlockSubpixel]
+    add     b
+    ld      [Game_BlockSubpixel],a
+    ret     nc
+    ld      hl,Game_GemRAM
+    ld      bc,2
+    rept    5
+    inc     [hl]
+    add     hl,bc
+    endr
     ret
 
 Game_DrawGems:
@@ -423,11 +591,16 @@ Game_VICGemTiles:   incbin  "GFX/gems_vic.2bpp.wle"
 Game_GemPalette:    incbin  "GFX/gems.pal"
 Game_VICGemPalette: incbin  "GFX/gems_vic.pal"
 Game_ShipPalette:
-    rgb8    80,80,80
-    rgb8    0,0,0
+    rgb8    $80,$80,$80
+    rgb8    $00,$00,$00
     rgb8    $48,$60,$70
     rgb8    $b0,$c0,$d0
+Game_HUDPalette:
+    rgb8    $80,$80,$80
+    rgb8    $00,$00,$00
+    rgb8    $78,$90,$a0
+    rgb8    $ff,$ff,$ff
 
-Game_ShipTiles:     incbin  "GFX/shiptiles.2bpp.wle"
+Game_SpriteTiles:     incbin  "GFX/gamesprites.2bpp.wle"
 
 ; TODO: rest of game graphics
