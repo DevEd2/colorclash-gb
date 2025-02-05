@@ -91,16 +91,19 @@ OptionsLoop:
     jp      z,.exit
     jr      :+
 .togglemusic
+    play_sound_effect SFX_MenuSelect
     ld      a,[Options_Music]
     xor     1
     ld      [Options_Music],a
     jr      :+
 .togglesfx
+    play_sound_effect SFX_MenuSelect
     ld      a,[Options_SFX]
     xor     1
     ld      [Options_SFX],a
     jr      :+
 .gotohighscores
+    play_sound_effect SFX_MenuSelect
     call    PalFadeOutWhite
 .fadeoutloop
     rst     _WaitVBlank
@@ -110,12 +113,14 @@ OptionsLoop:
     jp      z,GM_HighScoreScreen
     jr      .fadeoutloop
 .down
+    play_sound_effect SFX_MenuCursor
     ld      a,[Options_MenuPos]
     inc     a
     and     3
     ld      [Options_MenuPos],a
     jr      :+
 .up
+    play_sound_effect SFX_MenuCursor
     ld      a,[Options_MenuPos]
     dec     a
     and     3
@@ -194,6 +199,7 @@ OptionsLoop:
     rst     _WaitVBlank
     jp      OptionsLoop
 .exit
+    play_sound_effect SFX_MenuSelect
     call    PalFadeOutWhite
 :   rst     _WaitVBlank
     call    Pal_DoFade

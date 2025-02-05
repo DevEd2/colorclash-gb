@@ -131,6 +131,7 @@ TitleLoop:
     dec     a
     and     3
     ld      [Title_MenuPos],a
+    play_sound_effect SFX_MenuCursor
     pop     af
     ret
 
@@ -140,10 +141,12 @@ TitleLoop:
     inc     a
     and     3
     ld      [Title_MenuPos],a
+    play_sound_effect SFX_MenuCursor
     pop     af
     ret
 
 .menuselect
+    play_sound_effect SFX_MenuSelect
     call    .exit
     ld      hl,.menuptrs
     ld      a,[Title_MenuPos]

@@ -2,12 +2,6 @@
 ; GBMod replay routine
 ; ================================================================
 
-def SFX_BIT_CH1 equ 0 ; REMOVE ME
-def SFX_BIT_CH2 equ 1 ; REMOVE ME
-def SFX_BIT_CH3 equ 2 ; REMOVE ME
-def SFX_BIT_CH4 equ 3 ; REMOVE ME
-def SFX_Playing equ $fffe
-
 ; NOTE: For best results, place player code in ROM0.
 
 ; ===========

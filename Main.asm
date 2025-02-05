@@ -96,6 +96,12 @@ macro dwfar
     dw      \1
 endm
 
+macro play_sound_effect
+    ld      a,bank(\1)
+    ld      hl,\1
+    call    PlaySFX
+endm
+
 ; =============================================================================
 
 section "OAM buffer",wramx
@@ -313,6 +319,7 @@ ProgramStart:
     
     ; enable double speed mode
     xor     a
+    ld      [SFX_Playing],a
     ldh     [rIE],a
     ld      a,$30
     ldh     [rP1],a
@@ -841,24 +848,8 @@ DoVBlank:
     ld      [hReleasedButtons],a    ; store buttons released this frame
     ld      a,P1F_5|P1F_4
     ld      [rP1],a
-    ; soft reset sequence
-    ld      hl,hResetTimer
-    ld      a,b
-    cp      BTN_A | BTN_B | BTN_START | BTN_SELECT
-    jr      nz,.noreset
-    inc     [hl]
-    ld      a,[hl]
-    cp      60
-    jr      nz,:+
-    ld      a,1
-    ld      [rROMB0],a
-    ld      a,[hGBAFlag]
-    ld      b,a
-    ld      a,[hGBCFlag]
-    jp      ProgramStart
-.noreset
-    ld      [hl],0
-    ; fall through
+    ; update SFX
+    call    UpdateSFX
 :   ; set interrupt flag
     ld      hl,hInterruptFlags
     set     INT_VBLANK,[hl]
@@ -1367,6 +1358,7 @@ endc
 
 ; =============================================================================
 
+include "Audio/SFX.asm"
 include "Audio/GBMod_Player.asm"
 
 ; =============================================================================
