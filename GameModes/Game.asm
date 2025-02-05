@@ -135,16 +135,19 @@ GM_Game:
     inc     l
     ld      [hl],a
 
+    ld      a,bank(Mus_Ingame)
+    call    GBMod_LoadModule
+
     ld      a,LCDCF_ON | LCDCF_BGON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_OBJ16
     ldh     [rLCDC],a
 
-    ld      a,IEF_VBLANK
+    ld      a,IEF_VBLANK | IEF_TIMER
     ldh     [rIE],a
     ei
 
 GameLoop:
-    call    Pal_DoFade
-    halt
+    call    Pal_DoFade  ; too slow to run during VBlank, so do it here
+    rst     _WaitVBlank
     ; draw beam
     ; *MUST* be done during VBlank, so do it before everything else
     ld      b,Game_BeamMap.end-Game_BeamMap
@@ -492,7 +495,7 @@ Game_ProcessGems:
     ret
 .gameover
     call    PalFadeOutWhite
-:   halt
+:   rst     _WaitVBlank
     call    Pal_DoFade
     ld      a,[sys_FadeState]
     bit     0,a
@@ -685,10 +688,10 @@ Game_BeamMap:       incbin  "GFX/beam.map"
 .end
 
 Game_GemTiles:      incbin  "GFX/gems.2bpp.wle"
-Game_VICGemTiles:   incbin  "GFX/gems_vic.2bpp.wle"
+;Game_VICGemTiles:   incbin  "GFX/gems_vic.2bpp.wle"
 
 Game_GemPalette:    incbin  "GFX/gems.pal"
-Game_VICGemPalette: incbin  "GFX/gems_vic.pal"
+;Game_VICGemPalette: incbin  "GFX/gems_vic.pal"
 Game_ShipPalette:
     rgb8    $80,$80,$80
     rgb8    $00,$00,$00

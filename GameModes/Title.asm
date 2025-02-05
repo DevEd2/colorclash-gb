@@ -66,10 +66,13 @@ GM_Title:
     lb      bc,SCRN_X_B,SCRN_Y_B
     call    LoadTilemap
 
+    ld      a,bank(Mus_Title)
+    call    GBMod_LoadModule
+
     ld      a,LCDCF_ON | LCDCF_BGON | LCDCF_BG9800 | LCDCF_BG8000 | LCDCF_OBJON | LCDCF_OBJ8
     ldh     [rLCDC],a
 
-    ld      a,IEF_VBLANK
+    ld      a,IEF_VBLANK | IEF_TIMER
     ldh     [rIE],a
     ei
 
@@ -116,7 +119,7 @@ TitleLoop:
     ld      [hl],a
     ; done
     call    Math_Random ; tick RNG each frame to prevent same game each time
-    halt
+    rst     _WaitVBlank
     jr      TitleLoop
 
 .menuup
@@ -170,7 +173,7 @@ TitleLoop:
 
 .exit
     call    PalFadeOutWhite
-:   halt
+:   rst     _WaitVBlank
     call    Pal_DoFade
     ld      a,[sys_FadeState]
     bit     0,a

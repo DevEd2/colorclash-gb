@@ -160,8 +160,8 @@ _Bankswitch:
     ret
     
 section "Reset $08",rom0[$08]
-Reset08:
-    ret
+_WaitVBlank:
+    jp      WaitVBlank
 
 section "Reset $10",rom0[$10]
 Reset10:
@@ -197,7 +197,7 @@ section "LCD status interrupt vector",rom0[$48]
 IRQ_STAT:   jp  DoSTAT
 
 section "Timer interrupt vector",rom0[$50]
-IRQ_Timer:  reti
+IRQ_Timer:  jp  DoTimer
 
 section "Serial interrupt vector",rom0[$58]
 IRQ_Serial: reti
@@ -771,7 +771,8 @@ WaitVBlank:
     push    hl
     ld      hl,hInterruptFlags
     res     INT_VBLANK,[hl]
-:   halt
+:   ei
+    halt
     bit     INT_VBLANK,[hl]
     jr      z,:-
     pop     hl
@@ -893,6 +894,22 @@ DoSTAT:
 
 STAT_Dummy:
     ret
+
+DoTimer:
+    push    af
+    push    bc
+    push    de
+    push    hl
+    ldh     a,[hROMB0]
+    push    af
+    call    GBMod_Update
+    pop     af
+    rst     _Bankswitch
+    pop     hl
+    pop     de
+    pop     bc
+    pop     af
+    reti
 
 ; =============================================================================
 ; Useful routines
@@ -1347,8 +1364,9 @@ endc
 
 ; =============================================================================
 
-;    include "Audio/DevSoundX.asm"
-;    include "Audio/DevSFX.asm"
+include "Audio/GBMod_Player.asm"
+
+; =============================================================================
 
 section "Lockout screen graphics and shared resources",romx
 
@@ -1366,3 +1384,11 @@ LogoHeaderPalette:  incbin  "GFX/textheader.pal"
 Font:               incbin  "GFX/font8.2bpp.wle"
 Pal_GrayscaleInverted:
 FontPalette:        incbin  "GFX/font8.pal"
+
+; =============================================================================
+
+section "Module: Title screen",romx[$4000]
+Mus_Title:      incbin  "Audio/Modules/title.gbm"
+
+section "Module: Ingame",romx[$4000]
+Mus_Ingame:     incbin  "Audio/Modules/ingame.gbm"

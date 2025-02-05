@@ -1,6 +1,6 @@
 PROJECTNAME=colorclash
 
-$(PROJECTNAME).gb: *.asm Engine/*.asm GameModes/*.asm Audio/*.asm Audio/Music/*.asm Audio/SFX/*.asm
+$(PROJECTNAME).gb: *.asm Engine/*.asm GameModes/*.asm Audio/*.asm
 	rgbasm -o $(PROJECTNAME).obj -p 255 Main.asm
 	rgblink -p 255 -o $(PROJECTNAME).gbc -n $(PROJECTNAME).sym $(PROJECTNAME).obj
 	rgbfix -v -p 255 $(PROJECTNAME).gbc
