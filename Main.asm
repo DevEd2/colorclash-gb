@@ -329,6 +329,9 @@ ProgramStart:
     ; any code that should be run on cold boot only goes here
 :   ld      a,WARM_BOOT_MAGIC
     ldh     [hWarmBoot],a
+    ld      a,1
+    ld      [Options_Music],a
+    ld      [Options_SFX],a
 if BUILD_DEBUG
     jp      GM_Debug
 else

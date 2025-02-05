@@ -66,8 +66,11 @@ GM_Title:
     lb      bc,SCRN_X_B,SCRN_Y_B
     call    LoadTilemap
 
+    ld      a,[GBM_SongID]
+    ld      b,a
     ld      a,bank(Mus_Title)
-    call    GBMod_LoadModule
+    cp      b
+    call    nz,GBMod_LoadModule
 
     ld      a,LCDCF_ON | LCDCF_BGON | LCDCF_BG9800 | LCDCF_BG8000 | LCDCF_OBJON | LCDCF_OBJ8
     ldh     [rLCDC],a
@@ -156,14 +159,10 @@ TitleLoop:
 .menuptrs
     dw      GM_Game
     dw      .help
-    dw      .options
+    dw      GM_Options
     dw      .credits
 
 .help
-    ; TODO
-    jr      @
-
-.options
     ; TODO
     jr      @
 
