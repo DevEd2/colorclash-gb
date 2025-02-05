@@ -19,6 +19,9 @@ section "SFX routines",rom0
 
 PlaySFX:
     push    af
+    ld      a,[Options_SFX]
+    and     a
+    jr      z,.skip
     push    bc
     push    de
     push    hl
@@ -41,6 +44,7 @@ PlaySFX:
     pop     hl
     pop     de
     pop     bc
+.skip
     pop     af
     ret
 

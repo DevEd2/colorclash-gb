@@ -19,6 +19,11 @@ GBM_Stop:           jp  GBMod_Stop
 
 GBMod_LoadModule:
     push    af
+    ld      a,[Options_Music]
+    and     a
+    jp      z,GBMod_Stop2
+    pop     af
+    push    af
     push    bc
     push    hl
     di
@@ -94,6 +99,8 @@ GBMod_LoadModule:
 
 ; ================================
 
+GBMod_Stop2:
+    pop     af
 GBMod_Stop:
     xor     a
     ld      hl,GBM_RAM_Start
