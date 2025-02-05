@@ -25,6 +25,8 @@ GM_Title:
     call    LoadPal
     ld      a,7
     call    LoadPal
+    ld      a,bank(Title_BGOverlayPalette)
+    rst     _Bankswitch
     ld      hl,Title_BGOverlayPalette
     ld      a,8
     call    LoadPal
@@ -48,6 +50,8 @@ GM_Title:
 
     call    PalFadeInWhite
 
+    ld      a,bank(Title_BGTiles1)
+    rst     _Bankswitch
     ld      hl,Title_BGTiles1
     ld      de,_VRAM
     call    DecodeWLE
@@ -111,6 +115,7 @@ TitleLoop:
     add     hl,bc
     ld      [hl],a
     ; done
+    call    Math_Random ; tick RNG each frame to prevent same game each time
     halt
     jr      TitleLoop
 

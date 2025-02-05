@@ -233,7 +233,7 @@ Header_ROMChecksum:     dw  0                           ; handled by rgbfix
 ; =============================================================================
 
     newcharmap MainFont
-def chars equs "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@$%(),.?>© =:^vlrwsadzxtl+-"
+def chars equs "ABCDEFGHIJKLMNOPQRSTUVWXYZ.,?!0123456789: ÄÖÜß"
 def char = 0
 rept strlen("{chars}")
     charmap strsub("{chars}", char + 1, 1), char
@@ -338,19 +338,20 @@ endc
 ; =============================================================================
 
 NonColorLockout:
-    ld      hl,Font
+    ld      a,bank(LockoutDMGTiles)
+    rst     _Bankswitch
+    ld      hl,LockoutDMGTiles
     ld      de,_VRAM
-    ld      bc,Font.end-Font
-    call    CopyTiles1BPP
-    
-    ld      hl,NonColorLockoutText
+    call    DecodeWLE
+
+    ld      hl,LockoutDMGMap
     ld      de,_SCRN0
     ld      bc,$1412
     call    LoadTilemap
-    
+
     ld      a,%00011011
     ldh     [rBGP],a
-    
+
     ld      a,LCDCF_ON | LCDCF_BGON | LCDCF_BG8000
     ldh     [rLCDC],a
 
@@ -361,24 +362,44 @@ NonColorLockout:
     jr      :-
 
 VBALockout:
-    ld      hl,Font
+    ld      a,bank(LogoHeaderTiles)
+    rst     _Bankswitch
+    ld      hl,LogoHeaderTiles
     ld      de,_VRAM
-    ld      bc,Font.end-Font
-    call    CopyTiles1BPP
-    
-    ld      hl,VBALockoutText
+    call    DecodeWLE
+
+    ld      hl,LogoHeaderMap
     ld      de,_SCRN0
-    ld      bc,$1412
-    call    LoadTilemap
+    lb      bc,SCRN_X_B,6
+    call    LoadTilemapAttr
+
+    ld      a,1
+    ldh     [rVBK],a
+    ld      hl,LockoutVBATiles
+    ld      de,_VRAM
+    call    DecodeWLE
+
+    xor     a
+    ldh     [rVBK],a
+    ld      hl,LockoutVBAMap
+    ld      de,_SCRN0 + (6 * SCRN_VX_B)
+    lb      bc,SCRN_X_B,SCRN_Y_B-6
+    call    LoadTilemapAttr
 
     ; GBC palette
-    ld      hl,Pal_GrayscaleInverted
+    ld      hl,LogoHeaderPalette
     ld      a,$80
     ldh     [rBCPS],a
+    rept    7*8
+    ld      a,[hl+]
+    ldh     [rBCPD],a
+    endr
+    ld      hl,FontPalette
     rept    8
     ld      a,[hl+]
     ldh     [rBCPD],a
     endr
+
     ; DMG palette (just in case)
     ld      a,%00011011
     ldh     [rBGP],a
@@ -387,52 +408,46 @@ VBALockout:
     ldh     [rLCDC],a
     
     jr      @
-    
-Pal_GrayscaleInverted:
-    rgb      0, 0, 0
-    rgb     10,10,10
-    rgb     20,20,20
-    rgb     31,31,31
 
-NonColorLockoutText:
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "  THIS GAME IS NOT  "
-    db      "COMPATIBLE WITH THIS"
-    db      "      SYSTEM.       "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
+;NonColorLockoutText:
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "  THIS GAME IS NOT  "
+;    db      "COMPATIBLE WITH THIS"
+;    db      "      SYSTEM.       "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
 
-VBALockoutText:
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "THIS EMULATOR IS NOT"
-    db      " SUPPORTED BY THIS  "
-    db      "       GAME.        "
-    db      "                    "
-    db      " PLEASE USE A NEWER "
-    db      "  EMULATOR SUCH AS  "
-    db      "SAMEBOY TO PLAY THIS"
-    db      "       GAME.        "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
-    db      "                    "
+;VBALockoutText:
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "THIS EMULATOR IS NOT"
+;    db      " SUPPORTED BY THIS  "
+;    db      "       GAME.        "
+;    db      "                    "
+;    db      " PLEASE USE A NEWER "
+;    db      "  EMULATOR SUCH AS  "
+;    db      "SAMEBOY TO PLAY THIS"
+;    db      "       GAME.        "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
+;    db      "                    "
     
 ; =============================================================================
 ; Error handler    
@@ -1308,9 +1323,6 @@ _OAMDMA_End:
 
 ; =============================================================================
 
-Font:   incbin  "GFX/font.1bpp"
-.end
-
 if BUILD_DEBUG
 Pal_BSOD:
     rgb  0, 0,31
@@ -1328,10 +1340,29 @@ if BUILD_DEBUG
 endc
     include "GameModes/Logos.asm"
     include "GameModes/Title.asm"
-    include "GameModes/Game.asm"  
+    include "GameModes/Game.asm"
+    include "GameModes/OptionsMenu.asm"
+    include "GameModes/HighScores.asm"
     include "GameModes/Credits.asm"
 
 ; =============================================================================
 
 ;    include "Audio/DevSoundX.asm"
 ;    include "Audio/DevSFX.asm"
+
+section "Lockout screen graphics and shared resources",romx
+
+LockoutDMGTiles:    incbin  "GFX/lockout_dmg.2bpp.wle"
+LockoutDMGMap:      incbin  "GFX/lockout_dmg.map"
+
+LockoutVBATiles:    incbin  "GFX/lockout_vba.2bpp.wle"
+LockoutVBAMap:      incbin  "GFX/lockout_vba.map"
+
+
+LogoHeaderTiles:    incbin  "GFX/textheader.2bpp.wle"
+LogoHeaderMap:      incbin  "GFX/textheader.map"
+LogoHeaderPalette:  incbin  "GFX/textheader.pal"
+
+Font:               incbin  "GFX/font8.2bpp.wle"
+Pal_GrayscaleInverted:
+FontPalette:        incbin  "GFX/font8.pal"

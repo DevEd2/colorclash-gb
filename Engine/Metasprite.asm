@@ -27,6 +27,7 @@ section "Metasprite routines",rom0
 ;         e = Y coordinate
 ;         c = horizontal flip? (0 = no, 1 = yes)
 DrawMetasprite:
+    rst     _Bankswitch
     ld      a,d
     ld      [hTemp],a
     ld      a,e

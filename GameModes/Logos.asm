@@ -74,11 +74,11 @@ LogoLoop:
     jr      LogoLoop
 .exit
     call    PalFadeOutWhite
-:   halt
-    call    Pal_DoFade
-    ld      a,[sys_FadeState]
-    bit     0,a
-    jr      nz,:-
+    :   halt
+        call    Pal_DoFade
+        ld      a,[sys_FadeState]
+        bit     0,a
+        jr      nz,:-
     jp      GM_Title
 
 section "Logo screen GFX",romx
