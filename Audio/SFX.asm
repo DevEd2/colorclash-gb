@@ -31,7 +31,7 @@ PlaySFX:
     ld      b,a
     ld      a,[SFX_Priority]
     cp      b
-    ret     c
+    jr      c,.skip2
     ld      a,[hl+]
     or      %10000000
     ld      [SFX_Playing],a
@@ -41,6 +41,7 @@ PlaySFX:
     ld      [SFX_Pointer+1],a
     ld      a,1
     ld      [SFX_Timer],a
+.skip2
     pop     hl
     pop     de
     pop     bc

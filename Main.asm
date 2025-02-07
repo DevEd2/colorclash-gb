@@ -311,15 +311,12 @@ ProgramStart:
     cp      $11
     jr      nz,NonColorLockout
     
-    ; init sound
-    ; pushbank
-    ; farcall DSX_Init
-    ; farcall DSFX_Init
-    ; popbank
-    
-    ; enable double speed mode
+    ld      a,-1
+    ld      [SFX_Priority],a
     xor     a
     ld      [SFX_Playing],a
+    
+    ; enable double speed mode
     ldh     [rIE],a
     ld      a,$30
     ldh     [rP1],a
