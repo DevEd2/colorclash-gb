@@ -237,15 +237,15 @@ CheckForNewHighScore:
     add     hl,bc   ; x9
     ld      bc,Game_HighScores
     add     hl,bc
-    ld      [hl],"B"
+    ld      [hl],"T"
     inc     hl
     ld      [hl],"E"
     inc     hl
-    ld      [hl],"P"
-    inc     hl
-    ld      [hl],"I"
-    inc     hl
     ld      [hl],"S"
+    inc     hl
+    ld      [hl],"T"
+    inc     hl
+    ld      [hl]," "
     inc     hl
     ld      a,[Game_Score]
     ld      [hl+],a

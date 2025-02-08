@@ -324,10 +324,7 @@ ProgramStart:
     ld      a,1
     ldh     [rKEY1],a
     stop
-    
-    call    Math_InitRandSeed
-    
- 
+     
     ldh     a,[hWarmBoot]
     cp      WARM_BOOT_MAGIC
     jr      nz,:+
@@ -856,6 +853,9 @@ DoVBlank:
     ld      [hReleasedButtons],a    ; store buttons released this frame
     ld      a,P1F_5|P1F_4
     ld      [rP1],a
+    ld      a,e
+    and     a
+    call    nz,Math_Random
     ; update SFX
     call    UpdateSFX
 :   ; set interrupt flag

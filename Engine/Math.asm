@@ -38,9 +38,8 @@ macro neg
 endm
 
 if INC_RAND
-section "RNG seeds",hram
-Math_RNGSeed1:  ds  2
-Math_RNGSeed2:  ds  2
+section "RNG seed",hram
+Math_RNGSeed:   dw
 endc
 
 section "Math routines",rom0
@@ -252,53 +251,30 @@ endc
 
 if INC_RAND
 
-def RNG_SEED_1  = 31416
-def RNG_SEED_2  = 52197
-
-Math_InitRandSeed:
-    ld      hl,Math_RNGSeed1
-    ld      a,low(RNG_SEED_1)
-    ld      [hl+],a
-    ld      a,high(RNG_SEED_1)
-    ld      [hl+],a
-    ld      a,low(RNG_SEED_2)
-    ld      [hl+],a
-    ld      a,high(RNG_SEED_2)
-    ld      [hl+],a
-    ret
-
 ; Returns a random number in HL.
-; adapted from https://learn.cemetech.net/index.php/Z80:Math_Routines#rand.3B_very_fast
+; Uses the 7-9-8 xorshift algorithm.
 Math_Random:
-    push    af
-    ld      hl,Math_RNGSeed1
+    ld      hl,Math_RNGSeed
     ld      a,[hl+]
     ld      h,[hl]
     ld      l,a
-    ld      b,h
-    ld      c,l
-    add     hl,hl
-    add     hl,hl
-    inc     l
-    add     hl,bc
+    
+    ld      a,h
+    rra
     ld      a,l
-    ldh     [Math_RNGSeed1],a
+    rra
+    xor     h
+    ld      h,a
+    ld      a,l
+    rra
     ld      a,h
-    ldh     [Math_RNGSeed1+1],a
-    ld      hl,Math_RNGSeed2
-    ld      a,[hl+]
-    ld      h,[hl]
-    ld      l,a
-    add     hl,hl
-    pop     af
-    sbc     a
-    and     %00101101
+    rra
     xor     l
-    ldh     [Math_RNGSeed2],a
-    ld      a,h
-    ldh     [Math_RNGSeed2+1],a
     ld      l,a
-    add     hl,bc
+    ld      [Math_RNGSeed+1],a
+    xor     h
+    ld      h,a
+    ld      [Math_RNGSeed],a
     ret
 
 ; Returns a random number from 0 to a given 8-bit integer.

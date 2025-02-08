@@ -121,7 +121,6 @@ TitleLoop:
     add     hl,bc
     ld      [hl],a
     ; done
-    call    Math_Random ; tick RNG each frame to prevent same game each time
     rst     _WaitVBlank
     jr      TitleLoop
 
@@ -174,6 +173,13 @@ TitleLoop:
     jr      @
 
 .exit
+    ; init RNG seed
+    ldh     a,[rDIV]
+    ldh     [Math_RNGSeed],a
+    ld      b,a
+    ldh     a,[hGlobalTimer]
+    xor     b
+    ld      [Math_RNGSeed+1],a
     call    PalFadeOutWhite
 :   rst     _WaitVBlank
     call    Pal_DoFade
