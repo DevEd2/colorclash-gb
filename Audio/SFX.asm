@@ -175,6 +175,15 @@ SFX_LoadWave:
 
 section "SFX data",romx
 
+; bit 7: stop
+; bit 6: timer
+; bit 5: load new wave
+; bit 4: NRx4
+; bit 3: NRx3
+; bit 2: NRx2
+; bit 1: NRx1
+; bit 0: NRx0
+
 SFX_MenuCursor:
     db  1,SFX_CH1
     db  %00_0_11110
@@ -260,7 +269,7 @@ SFX_Pause:
     db  2
     db  $01,$23,$45,$66,$76,$65,$43,$21,$0f,$ed,$cb,$aa,$9a,$ab,$cd,$ef
     db  $20
-    dw  $8483
+    dw  $483 | 1<<15
     db  %01_0_00100
     db  2
     db  $40
@@ -277,3 +286,36 @@ SFX_Pause:
     db  %00_0_00100
     db  0
     db  %10_0_00000
+
+SFX_BackToMenu:
+    db  0,SFX_CH3
+    db  %01_1_11100
+    db  1
+    db  $01,$23,$45,$66,$76,$65,$43,$21,$0f,$ed,$cb,$aa,$9a,$ab,$cd,$ef
+    db  $20
+    dw  $693 | 1<<15
+    db  %01_0_11000
+    db  1
+    dw  $02c
+    db  %01_0_11000
+    db  1
+    dw  $6cd
+    db  %01_0_01000
+    db  1
+    db  low($6d6)
+    db  %01_0_01100
+    db  1
+    db  $40
+    db  low($6df)
+    db  %01_0_01000
+    db  1
+    db  low($6e7)
+    db  %01_0_01100
+    db  1
+    db  $60
+    db  low($6ef)
+    db  %01_0_01000
+    db  1
+    db  low($6f7)
+    db  %10_0_00100
+    db  0

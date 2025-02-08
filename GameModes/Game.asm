@@ -186,6 +186,8 @@ GameLoop:
     call    nz,.nextgem
     bit     BIT_DOWN,a
     call    nz,.prevgem
+    bit     BIT_START,a
+    call    nz,Game_Pause
 
     ; convert player column to player X position
     ld      a,[Game_PlayerPos]
@@ -438,6 +440,78 @@ GameLoop:
 :   ld      [Game_CurrentColor],a
     pop     af
     ret
+
+Game_Pause:
+    ; make screen lighter
+    ld      a,bank(Game_BGPaletteLight)
+    rst     _Bankswitch
+    ld      hl,Game_BGPaletteLight
+    xor     a
+    call    LoadPal
+    ld      a,1
+    call    LoadPal
+    ld      a,2
+    call    LoadPal
+    ld      a,3
+    call    LoadPal
+    ld      a,4
+    call    LoadPal
+    ld      a,5
+    call    LoadPal
+    ld      a,6
+    call    LoadPal
+    ld      a,7
+    call    LoadPal
+    call    CopyPalettes
+    play_sound_effect SFX_Pause
+    
+Game_PauseLoop:
+    rst     _WaitVBlank
+    bit     BIT_SELECT,a
+    jr      nz,.exit
+    ldh     a,[hPressedButtons]
+    bit     BIT_START,a
+    jr      z,Game_PauseLoop
+    ; done    
+    ld      a,bank(Game_BGPalette)
+    rst     _Bankswitch
+    ld      hl,Game_BGPalette
+    xor     a
+    call    LoadPal
+    ld      a,1
+    call    LoadPal
+    ld      a,2
+    call    LoadPal
+    ld      a,3
+    call    LoadPal
+    ld      a,4
+    call    LoadPal
+    ld      a,5
+    call    LoadPal
+    ld      a,6
+    call    LoadPal
+    ld      a,7
+    call    LoadPal
+    
+    ld      hl,Game_GemPalette
+    ld      a,8
+    call    LoadPal
+    ld      a,9
+    call    LoadPal
+    call    CopyPalettes
+    ret
+.exit
+    call    PalFadeOutWhite
+    play_sound_effect SFX_BackToMenu
+:   rst     _WaitVBlank
+    call    Pal_DoFade
+    ld      a,[sys_FadeState]
+    bit     0,a
+    jr      nz,:-
+    call    GBMod_Stop
+    ld      sp,$e000
+    jp      GM_Title
+    
 
 Game_Add1Point:
     ld      a,[Game_Score+3]
@@ -763,21 +837,22 @@ Game_DrawShip:
 
 section "Game GFX",romx
 
-Game_BGPalette:     incbin  "GFX/game.pal"
-Game_BeamPalette:   incbin  "GFX/beam.pal"
+Game_BGPalette:         incbin  "GFX/game.pal"
+Game_BeamPalette:       incbin  "GFX/beam.pal"
+Game_BGPaletteLight:    incbin  "GFX/game_light.pal"
 
-Game_BGTiles:       incbin  "GFX/game.2bpp.wle"
-Game_BeamTiles:     incbin  "GFX/beam.2bpp.wle"
+Game_BGTiles:           incbin  "GFX/game.2bpp.wle"
+Game_BeamTiles:         incbin  "GFX/beam.2bpp.wle"
 
-Game_BGMap:         incbin  "GFX/game.map"
-Game_BeamMap:       incbin  "GFX/beam.map"
+Game_BGMap:             incbin  "GFX/game.map"
+Game_BeamMap:           incbin  "GFX/beam.map"
 .end
 
-Game_GemTiles:      incbin  "GFX/gems.2bpp.wle"
-;Game_VICGemTiles:   incbin  "GFX/gems_vic.2bpp.wle"
+Game_GemTiles:          incbin  "GFX/gems.2bpp.wle"
+;Game_VICGemTiles:       incbin  "GFX/gems_vic.2bpp.wle"
 
-Game_GemPalette:    incbin  "GFX/gems.pal"
-;Game_VICGemPalette: incbin  "GFX/gems_vic.pal"
+Game_GemPalette:        incbin  "GFX/gems.pal"
+;Game_VICGemPalette:     incbin  "GFX/gems_vic.pal"
 Game_ShipPalette:
     rgb8    $80,$80,$80
     rgb8    $00,$00,$00
