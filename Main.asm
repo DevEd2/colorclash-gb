@@ -40,8 +40,8 @@ def ERR_INVALID_LEVEL_SCRIPT_CMD    equ 3
 def ERR_BAD_JUMP_GENERIC            equ 8
 
 macro lb
-    assert  (\2 > 0) & (\2 < 256)
-    assert  (\3 > 0) & (\3 < 256)
+    assert  (\2 >= 0) & (\2 < 256)
+    assert  (\3 >= 0) & (\3 < 256)
     ld      \1,(\2<<8) | \3
 endm
 
@@ -315,6 +315,7 @@ ProgramStart:
     ld      [SFX_Priority],a
     xor     a
     ld      [SFX_Playing],a
+    ld      [Game_OverMan],a
     
     ; enable double speed mode
     ldh     [rIE],a
@@ -336,6 +337,16 @@ ProgramStart:
     ld      a,1
     ld      [Options_Music],a
     ld      [Options_SFX],a
+    ; init high score table
+    ; TODO: if I add SRAM for saving high scores, only do this if SRAM is corrupt
+    ld      hl,HighScores_Default
+    ld      de,Game_HighScores
+    ld      b,(5+4)*5
+:   ld      a,[hl+]
+    ld      [de],a
+    inc     de
+    dec     b 
+    jr      nz,:-
 if BUILD_DEBUG
     jp      GM_Debug
 else

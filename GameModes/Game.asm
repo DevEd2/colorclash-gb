@@ -21,6 +21,7 @@ Game_HitCount:      db  ; number of times in a row you've hit a block of a given
 Game_CurrentSpeed:  db  ; number of subpixels blocks move down per frame
 Game_BlockSubpixel: db  ; current subpixel of blocks
 Game_SpeedPacer:    db  ; how fast speed increases
+Game_OverMan:       db
 
 Game_GemRAM:        ds  5*2
 
@@ -494,14 +495,99 @@ Game_ProcessGems:
     endr
     ret
 .gameover
+    call    GBMod_Stop
     call    PalFadeOutWhite
 :   rst     _WaitVBlank
     call    Pal_DoFade
     ld      a,[sys_FadeState]
     bit     0,a
     jr      nz,:-
+    
+    ; game over screen
+    
     call    LCDOff
-    jr      @
+    ; clear background map
+    ld      hl,_SCRN0
+    ld      bc,_SCRN1-_SCRN0
+    push    hl
+    push    bc
+    ld      e," "
+    xor     a
+    ldh     [rVBK],a
+    call    MemFill
+    pop     bc
+    pop     hl
+    ld      a,1
+    ldh     [rVBK],a
+    ld      e,$0f
+    call    MemFill
+    ; load header GFX
+    xor     a
+    ldh     [rVBK],a
+    ld      a,bank(LogoHeaderTiles)
+    rst     _Bankswitch
+    ld      hl,LogoHeaderTiles
+    ld      de,_VRAM
+    call    DecodeWLE
+    ld      hl,LogoHeaderMap
+    ld      de,_SCRN0
+    lb      bc,SCRN_X_B,6
+    call    LoadTilemapAttr
+    ; load font
+    ld      a,1
+    ldh     [rVBK],a
+    ld      hl,Font
+    ld      de,_VRAM
+    call    DecodeWLE
+    xor     a
+    ldh     [rVBK],a
+    
+    ; load palettes
+    ld      hl,LogoHeaderPalette
+    xor     a
+    call    LoadPal
+    ld      a,1
+    call    LoadPal
+    ld      a,2
+    call    LoadPal
+    ld      a,3
+    call    LoadPal
+    ld      a,4
+    call    LoadPal
+    ld      a,5
+    call    LoadPal
+    ld      a,6
+    call    LoadPal
+    ld      hl,FontPalette
+    ld      a,7
+    call    LoadPal
+    call    CopyPalettes
+    call    PalFadeInWhite
+    
+    ld      hl,str_GameOver
+    ld      de,$9945
+    call    Options_PrintString
+    
+    ld      a,LCDCF_ON | LCDCF_BGON | LCDCF_BG8000 | LCDCF_BG9800
+    ldh     [rLCDC],a
+.gameoverloop
+    call    Pal_DoFade
+    rst     _WaitVBlank
+    ldh     a,[hPressedButtons]
+    and     BTN_START | BTN_A | BTN_B
+    jr      z,.gameoverloop
+    call    PalFadeOutWhite
+:   rst     _WaitVBlank
+    call    Pal_DoFade
+    ld      a,[sys_FadeState]
+    bit     0,a
+    jr      nz,:-
+    ld      a,1
+    ld      [Game_OverMan],a
+    jp      GM_HighScoreScreen
+
+str_GameOver:
+    db  "GAME OVER!",-1
 
 Game_DrawGems:
     ld      hl,Game_GemRAM
