@@ -72,13 +72,6 @@ GM_Title:
     cp      b
     call    nz,GBMod_LoadModule
 
-    ld      a,LCDCF_ON | LCDCF_BGON | LCDCF_BG9800 | LCDCF_BG8000 | LCDCF_OBJON | LCDCF_OBJ8
-    ldh     [rLCDC],a
-
-    ld      a,IEF_VBLANK | IEF_TIMER
-    ldh     [rIE],a
-    ei
-
     ; draw overlay + arrow sprites
     xor     a
     ld      [Metasprite_OAMPos],a
@@ -86,6 +79,14 @@ GM_Title:
     ld      a,bank(Sprite_titlespr)
     lb      de,11,18
     call    DrawMetasprite
+    
+    ld      a,LCDCF_ON | LCDCF_BGON | LCDCF_BG9800 | LCDCF_BG8000 | LCDCF_OBJON | LCDCF_OBJ8
+    ldh     [rLCDC],a
+
+    ld      a,IEF_VBLANK | IEF_TIMER
+    ldh     [rIE],a
+    ei
+
 
 TitleLoop:
     ; do fading
