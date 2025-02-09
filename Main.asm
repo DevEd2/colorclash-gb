@@ -235,7 +235,7 @@ Header_ROMSize:         ds  1                           ; handled by rgbfix
 Header_RAMSize:         db  0                           ; not used
 Header_DestinationCode: db  1                           ; 0 = Japan, 1 = not Japan
 Header_OldLicenseCode:  db  $33                         ; must be $33 for SGB support
-Header_Revision:        db  -1                          ; revision (-1 for prerelease builds)
+Header_Revision:        db  0                          ; revision (-1 for prerelease builds)
 Header_Checksum:        db  0                           ; handled by rgbfix
 Header_ROMChecksum:     dw  0                           ; handled by rgbfix
 
@@ -1158,6 +1158,46 @@ LoadTilemapAttr:
     xor     a
     ldh     [rVBK],a
     ret
+    
+; Same as LoadTilemapAttr but waits for VBlank accessibility
+LoadTilemapAttrSafe:
+    push    bc
+.loop
+    xor     a
+    ldh     [rVBK],a
+:   ldh     a,[rSTAT]
+    and     STATF_BUSY
+    jr      nz,:-
+    ld      a,[hl+]
+    ld      [de],a
+    ld      a,1
+    ldh     [rVBK],a
+:   ldh     a,[rSTAT]
+    and     STATF_BUSY
+    jr      nz,:-
+    ld      a,[hl+]
+    ld      [de],a
+    inc     de
+    dec     b
+    jr      nz,.loop
+    pop     bc
+    dec     c
+    jr      z,.done
+    push    hl
+    ld      a,e
+    and     %11100000
+    ld      e,a
+    ld      hl,$20
+    add     hl,de
+    ld      d,h
+    ld      e,l
+    pop     hl
+    push    bc
+    jr      .loop
+.done
+    xor     a
+    ldh     [rVBK],a
+    ret
 
 ; INPUT: hl = source
 ;        de = destination
@@ -1366,5 +1406,12 @@ FontPalette:        incbin  "GFX/font8.pal"
 section "Module: Title screen",romx[$4000]
 Mus_Title:      incbin  "Audio/Modules/title.gbm"
 
-section "Module: Ingame",romx[$4000]
-Mus_Ingame:     incbin  "Audio/Modules/ingame.gbm"
+section "Module: Ingame 1",romx[$4000],bank[4]
+Mus_Ingame1:    incbin  "Audio/Modules/ingame1.gbm"
+section "Module: Ingame 2",romx[$4000],bank[5]
+Mus_Ingame2:    incbin  "Audio/Modules/ingame2.gbm"
+section "Module: Ingame 3 (Part 1)",romx[$4000],bank[6]
+Mus_Ingame3:    incbin  "Audio/Modules/ingame3.gbm",0,16384
+section "Module: Ingame 3 (Part 2)",romx[$4000],bank[7]
+Mus_Ingame3_B:  incbin  "Audio/Modules/ingame3.gbm",16384
+

@@ -151,7 +151,9 @@ GM_Game:
     inc     l
     ld      [hl],a
 
-    ld      a,bank(Mus_Ingame)
+    ld      a,3
+    call    Math_RandRange
+    add     bank(Mus_Ingame1)    
     call    GBMod_LoadModule
 
     ld      a,LCDCF_ON | LCDCF_BGON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_OBJ16
