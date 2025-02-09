@@ -319,3 +319,40 @@ SFX_BackToMenu:
     db  low($6f7)
     db  %10_0_00100
     db  0
+
+SFX_Shoot:
+    db  1,SFX_CH1
+    db  %00_0_11110
+    db  $bf,$f0
+    dw  $8790
+    db  %00_0_11100
+    db  $c0
+    dw  $8710
+    db  %00_0_11100
+    db  $90
+    dw  $8690
+    db  %00_0_11100
+    db  $60
+    dw  $8610
+    db  %00_0_11100
+    db  $30
+    dw  $8590
+    db  %00_0_11100
+    db  $00
+    dw  $8510
+    db  %10000000
+
+SFX_Hit:
+    db  0,SFX_CH1
+    db  %01_0_11110
+    db  3
+    db  $bf,$f1
+    dw  $8721
+    db  %01_0_11110
+    db  3
+    db  $bf,$f1
+    dw  $8107
+    db  %00011100
+    db  $00
+    dw  $8790
+    db  %10000000

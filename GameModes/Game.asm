@@ -288,9 +288,11 @@ GameLoop:
     cp      4
     ld      [Game_HitCount],a
     jr      nc,:+
+    ;play_sound_effect SFX_Hit
     call    Game_Add1Point
     jr      .skipbullet
-:   call    Game_Add10Points
+:   play_sound_effect SFX_MenuSelect
+    call    Game_Add10Points
     jr      .skipbullet
 
 .mismatch
@@ -306,6 +308,7 @@ GameLoop:
     ld      [hl+],a
     inc     hl
     endr
+    play_sound_effect SFX_Spring
     jr      .skipbullet
 .skipbullet
     ; draw stuff
@@ -417,6 +420,7 @@ GameLoop:
     ld      a,[Game_PlayerX]
     sub     12
     ld      [Game_BulletX],a
+    play_sound_effect SFX_Shoot    
 :   pop     af
     ret
 .left
@@ -426,6 +430,7 @@ GameLoop:
     jr      z,:+
     dec     a
     ld      [Game_PlayerPos],a
+    play_sound_effect SFX_MenuCursor
 :   pop     af
     ret
 .right
@@ -435,6 +440,7 @@ GameLoop:
     jr      z,:+
     inc     a
     ld      [Game_PlayerPos],a
+    play_sound_effect SFX_MenuCursor
 :   pop     af
     ret
 .nextgem
@@ -445,6 +451,7 @@ GameLoop:
     jr      nz,:+
     xor     a
 :   ld      [Game_CurrentColor],a
+    play_sound_effect SFX_MenuCursor
     pop     af
     ret
 .prevgem
@@ -455,6 +462,7 @@ GameLoop:
     jr      nz,:+
     ld      a,4
 :   ld      [Game_CurrentColor],a
+    play_sound_effect SFX_MenuCursor
     pop     af
     ret
 
