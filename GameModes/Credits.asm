@@ -56,7 +56,6 @@ GM_Credits:
     call    LoadTilemapAttr
     
     ; load credits text
-    ld      b,b
     ld      a,1
     ldh     [rVBK],a
     ld      a,bank(Credits_Header)
