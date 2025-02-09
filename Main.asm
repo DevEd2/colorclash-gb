@@ -1335,6 +1335,7 @@ endc
     include "GameModes/OptionsMenu.asm"
     include "GameModes/HighScores.asm"
     include "GameModes/Credits.asm"
+    include "GameModes/Help.asm"
 
 ; =============================================================================
 

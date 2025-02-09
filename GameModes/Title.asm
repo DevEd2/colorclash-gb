@@ -160,17 +160,9 @@ TitleLoop:
 
 .menuptrs
     dw      GM_Game
-    dw      .help
+    dw      GM_Help
     dw      GM_Options
-    dw      .credits
-
-.help
-    ; TODO
-    jr      @
-
-.credits
-    ; TODO
-    jr      @
+    dw      GM_Credits
 
 .exit
     ; init RNG seed
