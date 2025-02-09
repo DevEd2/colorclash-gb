@@ -23,10 +23,10 @@
 ; ======================================================================
 
 def INC_MUL     = 0 ; multiplication
-def INC_DIV     = 0 ; division
+def INC_DIV     = 1 ; division
 def INC_POW     = 0 ; square (NYI)
 def INC_SQRT    = 0 ; square root
-def INC_SINCOS  = 0 ; sine + cosine
+def INC_SINCOS  = 1 ; sine + cosine
 def INC_ATAN2   = 0 ; 2-argument arctangent
 def INC_RAND    = 1 ; 32-bit PRNG
 def INC_LERP    = 0 ; linear interpolation (NYI)

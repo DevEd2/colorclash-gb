@@ -104,8 +104,11 @@ endm
 
 ; =============================================================================
 
-section "OAM buffer",wramx
+section "OAM buffer",wramx,align[8]
 OAMBuffer:  ds  40*4
+
+section "Pause screen OAM buffer",wramx,align[8]
+OAMBuffer2: ds  40*4
 
 section "System variables",hram
 hOAMDMA:            ds  16 ;_OAMDMA_End-_OAMDMA
@@ -239,7 +242,7 @@ Header_ROMChecksum:     dw  0                           ; handled by rgbfix
 ; =============================================================================
 
     newcharmap MainFont
-def chars equs "ABCDEFGHIJKLMNOPQRSTUVWXYZ.,?!0123456789: ÄÖÜß"
+def chars equs "ABCDEFGHIJKLMNOPQRSTUVWXYZ.,?!0123456789: "
 def char = 0
 rept strlen("{chars}")
     charmap strsub("{chars}", char + 1, 1), char
@@ -424,46 +427,6 @@ VBALockout:
     
     jr      @
 
-;NonColorLockoutText:
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "  THIS GAME IS NOT  "
-;    db      "COMPATIBLE WITH THIS"
-;    db      "      SYSTEM.       "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-
-;VBALockoutText:
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "THIS EMULATOR IS NOT"
-;    db      " SUPPORTED BY THIS  "
-;    db      "       GAME.        "
-;    db      "                    "
-;    db      " PLEASE USE A NEWER "
-;    db      "  EMULATOR SUCH AS  "
-;    db      "SAMEBOY TO PLAY THIS"
-;    db      "       GAME.        "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-;    db      "                    "
-    
 ; =============================================================================
 ; Error handler    
 ; =============================================================================
@@ -1327,6 +1290,15 @@ LCDOff:
     include "Engine/WLE_Decode_Safe.asm"
     include "Engine/PerFade.asm"
     include "Engine/Metasprite.asm"
+
+
+    pushc main
+if BUILD_LOGO == 0
+    db  "karma",0
+else
+    db  "revival",0
+endc
+    popc
 
 ; =============================================================================
 

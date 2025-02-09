@@ -6,22 +6,26 @@ def GAME_PACE = 8
 def GAME_MAX_SPEED = 99
 
 Game_RAM:
-Game_Score:         ds  4   ; 4 digits
-Game_Health:        db  ; maximum of 3
-Game_Blocks:        ds  2*5 ; y pos, color
-Game_PlayerPos:     db  ; which column the player is in
-Game_PlayerX:       db  ; actual X position
-Game_CurrentColor:  db  ; selected color
-Game_BulletPos:     db  ; which column the bullet is in
-Game_BulletX:       db  ; which column the player's bullet is in (-1 = none present)
-Game_BulletY:       db  ; Y position of bullet
-Game_BulletColor:   db  ; color of bullet
-Game_LastColorHit:  db  ; color of last block hit
-Game_HitCount:      db  ; number of times in a row you've hit a block of a given color
-Game_CurrentSpeed:  db  ; number of subpixels blocks move down per frame
-Game_BlockSubpixel: db  ; current subpixel of blocks
-Game_SpeedPacer:    db  ; how fast speed increases
-Game_OverMan:       db
+Game_Score:             ds  4   ; 4 digits
+Game_Health:            db  ; maximum of 3
+Game_Blocks:            ds  2*5 ; y pos, color
+Game_PlayerPos:         db  ; which column the player is in
+Game_PlayerX:           db  ; actual X position
+Game_CurrentColor:      db  ; selected color
+Game_BulletPos:         db  ; which column the bullet is in
+Game_BulletX:           db  ; which column the player's bullet is in (-1 = none present)
+Game_BulletY:           db  ; Y position of bullet
+Game_BulletColor:       db  ; color of bullet
+Game_LastColorHit:      db  ; color of last block hit
+Game_HitCount:          db  ; number of times in a row you've hit a block of a given color
+Game_CurrentSpeed:      db  ; number of subpixels blocks move down per frame
+Game_BlockSubpixel:     db  ; current subpixel of blocks
+Game_SpeedPacer:        db  ; how fast speed increases
+Game_OverMan:           db
+Game_PauseLogoYPhase:   db
+Game_PauseLogoXPhase:   db
+Game_PauseTextYPhase:   db
+Game_PauseTextXPhase:   db
 
 Game_GemRAM:        ds  5*2
 
@@ -33,9 +37,19 @@ GM_Game:
     call    LCDOff
     xor     a
     ldh     [rVBK],a
+    ; clear both OAM buffers
     ld      hl,OAMBuffer
-    ld      b,a
+    ld      b,4*40
     call    MemFillSmall
+    ld      hl,OAMBuffer2
+    ld      b,4*40
+    call    MemFillSmall
+    ; load pause screen OAM
+    ld      hl,PauseScreenOAM
+    ld      de,OAMBuffer2
+    ld      b,PauseScreenOAM.end-PauseScreenOAM
+    call    MemCopySmall
+    
     ld      a,bank(Game_BGPalette)
     rst     _Bankswitch
     ld      hl,Game_BGPalette
@@ -84,6 +98,7 @@ GM_Game:
     call    DecodeWLE
     ; hl = Game_BeamTiles
     call    DecodeWLE
+    ; hl = Game_BGMap
     ld      de,_SCRN0
     lb      bc,SCRN_X_B,SCRN_Y_B
     call    LoadTilemapAttr
@@ -462,14 +477,22 @@ Game_Pause:
     call    LoadPal
     ld      a,7
     call    LoadPal
+    ld      hl,Game_PausePalettes
+    ld      a,8
+    call    LoadPal
+    ld      a,9
+    call    LoadPal
     call    CopyPalettes
     play_sound_effect SFX_Pause
+    ld      hl,hOAMDMA+1
+    ld      [hl],high(OAMBuffer2)
     
 Game_PauseLoop:
     rst     _WaitVBlank
+    call    Game_UpdatePauseSprites
+    ldh     a,[hPressedButtons]
     bit     BIT_SELECT,a
     jr      nz,.exit
-    ldh     a,[hPressedButtons]
     bit     BIT_START,a
     jr      z,Game_PauseLoop
     ; done    
@@ -499,6 +522,8 @@ Game_PauseLoop:
     ld      a,9
     call    LoadPal
     call    CopyPalettes
+    ld      hl,hOAMDMA+1
+    ld      [hl],high(OAMBuffer)
     ret
 .exit
     call    PalFadeOutWhite
@@ -510,7 +535,120 @@ Game_PauseLoop:
     jr      nz,:-
     call    GBMod_Stop
     ld      sp,$e000
+    ld      hl,hOAMDMA+1
+    ld      [hl],high(OAMBuffer)
     jp      GM_Title
+
+Game_UpdatePauseSprites:
+    ld      a,[Game_PauseLogoYPhase]
+    ld      l,a
+    ld      h,0
+    ld      bc,Game_PauseLogoYTable
+    add     hl,bc
+    ld      a,l
+    cp      low(Game_PauseLogoYTable.end)
+    ld      a,[hl]
+    jr      nz,:+
+    xor     a
+    ld      [Game_PauseLogoYPhase],a
+    ld      a,[bc]
+:   ldh     [hTemp],a
+
+    ld      a,[Game_PauseLogoXPhase]
+    ld      l,a
+    ld      h,0
+    ld      bc,Game_PauseLogoXTable
+    add     hl,bc
+    ld      a,l
+    cp      low(Game_PauseLogoXTable.end)
+    ld      a,[hl]
+    jr      nz,:+
+    xor     a
+    ld      [Game_PauseLogoXPhase],a
+    ld      a,[bc]
+:   ldh     [hTemp2],a
+
+    ld      hl,PauseScreenOAM
+    ld      de,OAMBuffer2
+    ld      b,14
+:   ldh     a,[hTemp]
+    add     [hl]
+    inc     hl
+    ld      [de],a
+    inc     e
+    ldh     a,[hTemp2]
+    add     [hl]
+    ld      [de],a
+    inc     hl
+    inc     e
+    inc     hl
+    inc     e
+    inc     hl
+    inc     e
+    dec     b
+    jr      nz,:-
+    
+    push    hl
+    
+    ld      a,[Game_PauseTextYPhase]
+    ld      l,a
+    ld      h,0
+    ld      bc,Game_PauseTextYTable
+    add     hl,bc
+    ld      a,l
+    cp      low(Game_PauseTextYTable.end)
+    ld      a,[hl]
+    jr      nz,:+
+    xor     a
+    ld      [Game_PauseTextYPhase],a
+    ld      a,[bc]
+:   ldh     [hTemp],a
+
+    ld      a,[Game_PauseTextXPhase]
+    ld      l,a
+    ld      h,0
+    ld      bc,Game_PauseTextXTable
+    add     hl,bc
+    ld      a,l
+    cp      low(Game_PauseTextXTable.end)
+    ld      a,[hl]
+    jr      nz,:+
+    xor     a
+    ld      [Game_PauseTextXPhase],a
+    ld      a,[bc]
+:   ldh     [hTemp2],a
+    
+    pop     hl
+    
+    ld      b,10
+:   ldh     a,[hTemp]
+    add     [hl]
+    inc     hl
+    ld      [de],a
+    inc     e
+    ldh     a,[hTemp2]
+    add     [hl]
+    ld      [de],a
+    inc     hl
+    inc     e
+    inc     hl
+    inc     e
+    inc     hl
+    inc     e
+    dec     b
+    jr      nz,:-
+    
+    ld      hl,Game_PauseLogoYPhase
+    inc     [hl]
+    inc     hl
+    inc     [hl]
+    inc     hl
+    inc     [hl]
+    inc     hl
+    inc     [hl]
+
+
+    ret
     
 
 Game_Add1Point:
@@ -634,6 +772,11 @@ Game_ProcessGems:
     call    LoadPal
     ld      hl,FontPalette
     ld      a,7
+    call    LoadPal
+    ld      hl,Game_PausePalettes
+    ld      a,8
+    call    LoadPal
+    ld      a,9
     call    LoadPal
     call    CopyPalettes
     call    PalFadeInWhite
@@ -835,11 +978,251 @@ Game_DrawShip:
 
     ret
 
+PauseScreenOAM:
+    ; "paused" text
+    db      -8
+    db      -24
+    db      $84
+    db      %00001000
+    db      -8
+    db      -16
+    db      $86
+    db      %00001000
+    db      -8
+    db      -8
+    db      $88
+    db      %00001000
+    db      -8
+    db      0
+    db      $8a
+    db      %00001000
+    db      -8
+    db      8
+    db      $8c
+    db      %00001000
+    db      -8
+    db      16
+    db      $8e
+    db      %00001000
+    db      -8
+    db      24
+    db      $90
+    db      %00001000
+    db      8
+    db      -24
+    db      $92
+    db      %00001000
+    db      8
+    db      -16
+    db      $94
+    db      %00001000
+    db      8
+    db      -8
+    db      $96
+    db      %00001000
+    db      8
+    db      0
+    db      $98
+    db      %00001000
+    db      8
+    db      8
+    db      $9a
+    db      %00001000
+    db      8
+    db      16
+    db      $9c
+    db      %00001000
+    db      8
+    db      24
+    db      $9e
+    db      %00001000
+    ; "press select to quit" text
+    db      1
+    db      -40
+    db      $a0
+    db      %00001001
+    db      1
+    db      -32
+    db      $a2
+    db      %00001001
+    db      1
+    db      -24
+    db      $a4
+    db      %00001001
+    db      1
+    db      -16
+    db      $a6
+    db      %00001001
+    db      1
+    db      -8
+    db      $a8
+    db      %00001001
+    db      1
+    db      0
+    db      $aa
+    db      %00001001
+    db      1
+    db      8
+    db      $ac
+    db      %00001001
+    db      1
+    db      16
+    db      $ae
+    db      %00001001
+    db      1
+    db      24
+    db      $b0
+    db      %00001001
+    db      1
+    db      32
+    db      $b2
+    db      %00001001
+.end
+
+Game_PauseLogoYTable:
+    db      $3b
+    db      $3b
+    db      $3c
+    db      $3c
+    db      $3c
+    db      $3c
+    db      $3d
+    db      $3d
+    db      $3d
+    db      $3e
+    db      $3f
+    db      $3f
+    db      $40
+    db      $40
+    db      $41
+    db      $42
+    db      $42
+    db      $43
+    db      $43
+    db      $43
+    db      $44
+    db      $44
+    db      $44
+    db      $43
+    db      $43
+    db      $43
+    db      $43
+    db      $42
+    db      $41
+    db      $41
+    db      $40
+    db      $40
+    db      $3f
+    db      $3f
+    db      $3e
+    db      $3d
+    db      $3c
+    db      $3c
+    db      $3b
+    db      $3b
+    db      $3b
+.end
+Game_PauseLogoXTable:
+    db      $4e
+    db      $4e
+    db      $4e
+    db      $4f
+    db      $50
+    db      $51
+    db      $51
+    db      $52
+    db      $53
+    db      $54
+    db      $54
+    db      $55
+    db      $55
+    db      $56
+    db      $56
+    db      $55
+    db      $55
+    db      $54
+    db      $54
+    db      $53
+    db      $52
+    db      $52
+    db      $51
+    db      $50
+    db      $4f
+    db      $4f
+    db      $4e
+    db      $4e
+    db      $4e
+.end
+Game_PauseTextYTable:
+    db      $60
+    db      $60
+    db      $61
+    db      $61
+    db      $62
+    db      $62
+    db      $62
+    db      $61
+    db      $61
+    db      $60
+    db      $60
+    db      $5f
+    db      $5e
+    db      $5e
+    db      $5d
+    db      $5c
+    db      $5c
+    db      $5b
+    db      $5a
+    db      $5a
+    db      $5a
+    db      $5a
+    db      $5a
+    db      $5a
+    db      $5b
+    db      $5b
+    db      $5c
+    db      $5c
+    db      $5d
+    db      $5e
+    db      $5f
+    db      $5f
+.end
+Game_PauseTextXTable:
+    db      $59
+    db      $5a
+    db      $5a
+    db      $5b
+    db      $5b
+    db      $5c
+    db      $5c
+    db      $5b
+    db      $5b
+    db      $5a
+    db      $59
+    db      $58
+    db      $57
+    db      $56
+    db      $55
+    db      $55
+    db      $54
+    db      $54
+    db      $54
+    db      $54
+    db      $54
+    db      $55
+    db      $55
+    db      $56
+    db      $57
+    db      $58
+.end
+
 section "Game GFX",romx
 
 Game_BGPalette:         incbin  "GFX/game.pal"
 Game_BeamPalette:       incbin  "GFX/beam.pal"
 Game_BGPaletteLight:    incbin  "GFX/game_light.pal"
+Game_PausePalettes:     incbin  "GFX/pause.pal"
+                        incbin  "GFX/sel2quit.pal"
 
 Game_BGTiles:           incbin  "GFX/game.2bpp.wle"
 Game_BeamTiles:         incbin  "GFX/beam.2bpp.wle"
@@ -866,4 +1249,3 @@ Game_HUDPalette:
 
 Game_SpriteTiles:     incbin  "GFX/gamesprites.2bpp.wle"
 
-; TODO: rest of game graphics

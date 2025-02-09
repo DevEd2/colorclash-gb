@@ -2,9 +2,12 @@
 section "High score RAM",wram0
 Game_HighScores:        ds  (5+4) * 5
 .end
+Game_ScorePos:          db
 Game_ScoreTemp:         ds  (5+4)
+ScoreEntryRAM:
 ScoreEntryBuffer:       ds  5
 ScoreEntryCursorPos:    db
+ScoreEntryRAMEnd:
 
 section "High score screen routines",rom0
 GM_HighScoreScreen:
@@ -76,7 +79,11 @@ HighScoreLoop:
     call    Pal_DoFade
     
     ldh     a,[hPressedButtons]
+    bit     BIT_A,a
+    jr      nz,.exit
     bit     BIT_B,a
+    jr      nz,.exit
+    bit     BIT_START,a
     jr      nz,.exit
     
     rst     _WaitVBlank
@@ -101,7 +108,10 @@ RedrawHighScores:
     lb      bc,5,5
 .loop
     push    de
-:   ld      a,[hl+]
+:   ldh     a,[rSTAT]
+    and     STATF_BUSY
+    jr      nz,:-
+    ld      a,[hl+]
     ld      [de],a
     inc     e
     dec     b
@@ -110,10 +120,13 @@ RedrawHighScores:
     add     9
     ld      e,a
     rept    4
-    ld      a,[hl+]
-    add     $1e
-    ld      [de],a
-    inc     e
+:       ldh     a,[rSTAT]
+        and     STATF_BUSY
+        jr      nz,:-
+        ld      a,[hl+]
+        add     $1e
+        ld      [de],a
+        inc     e
     endr
     pop     de
     ld      a,e
@@ -203,7 +216,7 @@ CheckForNewHighScore:
     pop     hl
     ld      b,5+4
     ld      a,c
-    ldh     [hTemp],a
+    ld      [Game_ScorePos],a
     ld      a,4
     sub     c
     ld      c,a
@@ -226,7 +239,7 @@ CheckForNewHighScore:
     jr      nz,.shiftloop
 .noshift
     ; add high score to list
-    ldh     a,[hTemp]
+    ld      a,[Game_ScorePos]
     ld      l,a
     ld      c,l
     ld      h,0
@@ -237,16 +250,12 @@ CheckForNewHighScore:
     add     hl,bc   ; x9
     ld      bc,Game_HighScores
     add     hl,bc
-    ld      [hl],"T"
-    inc     hl
-    ld      [hl],"E"
-    inc     hl
-    ld      [hl],"S"
-    inc     hl
-    ld      [hl],"T"
-    inc     hl
-    ld      [hl]," "
-    inc     hl
+    ld      a,"A"
+    ld      [hl+],a
+    ld      [hl+],a
+    ld      [hl+],a
+    ld      [hl+],a
+    ld      [hl+],a
     ld      a,[Game_Score]
     ld      [hl+],a
     ld      a,[Game_Score+1]
@@ -257,6 +266,10 @@ CheckForNewHighScore:
     ld      [hl],a
     
     call    RedrawHighScores
+    ld      hl,ScoreEntryRAM
+    ld      b,ScoreEntryRAMEnd-ScoreEntryRAM
+    xor     a
+    call    MemFillSmall
     
     ld      a,LCDCF_ON | LCDCF_BGON | LCDCF_BG8000 | LCDCF_BG9800
     ldh     [rLCDC],a
@@ -267,11 +280,147 @@ HighScoreEntryLoop:
     rst     _WaitVBlank
     
     ; draw score buffer
+    ld      a,[Game_ScorePos]
+    ld      l,a
+    ld      h,0
+    add     hl,hl   ; x2
+    add     hl,hl   ; x4
+    add     hl,hl   ; x8
+    add     hl,hl   ; x16
+    add     hl,hl   ; x32
+    add     hl,hl   ; x64
+    ld      de,$9901
+    add     hl,de
+    ld      d,h
+    ld      e,l
     ld      hl,ScoreEntryBuffer
-    
+    ld      b,5
+.bufloop
+    ld      a,[ScoreEntryCursorPos]
+    ld      c,a
+    ld      a,5
+    sub     b
+    cp      c
+    jr      z,:+
+    ldh     a,[hGlobalTimer]
+    bit     0,a
+    jr      z,.skipchar
+:   ldh     a,[rSTAT]
+    and     STATF_BUSY
+    jr      nz,:-
+    ld      a,[hl+]
+    ld      [de],a
+    inc     e
+    dec     b
+    jr      nz,.bufloop
+    jr      .edit
+.skipchar
+    ldh     a,[rSTAT]
+    and     STATF_BUSY
+    jr      nz,.skipchar
+    ld      a," "
+    ld      [de],a
+    inc     hl
+    inc     e
+    dec     b
+    jr      nz,.bufloop
+.edit ; edit controls
     ldh     a,[hPressedButtons]
-    
+    bit     BIT_UP,a
+    jr      nz,.nextchar
+    bit     BIT_DOWN,a
+    jr      nz,.prevchar
+    bit     BIT_A,a
+    jr      nz,.enterchar
+    bit     BIT_B,a
+    jr      nz,.backspace
+    bit     BIT_START,a
+    jr      nz,.endentry
     jr      HighScoreEntryLoop
+.nextchar
+    ld      a,[ScoreEntryCursorPos]
+    ld      l,a
+    ld      h,0
+    ld      de,ScoreEntryBuffer
+    add     hl,de
+    ld      a,[hl]
+    cp      " "
+    jr      nz,:+
+    xor     a
+    ld      [hl],a
+    jr      HighScoreEntryLoop
+:   inc     a
+    ld      [hl],a
+    jr      HighScoreEntryLoop
+.prevchar
+    ld      a,[ScoreEntryCursorPos]
+    ld      l,a
+    ld      h,0
+    ld      de,ScoreEntryBuffer
+    add     hl,de
+    ld      a,[hl]
+    and     a
+    jr      nz,:+
+    ld      a," "
+    ld      [hl],a
+    jp      HighScoreEntryLoop
+:   dec     a
+    ld      [hl],a
+    jp      HighScoreEntryLoop
+.enterchar
+    ld      a,[ScoreEntryCursorPos]
+    cp      4
+    jr      z,.endentry
+    inc     a
+    ld      [ScoreEntryCursorPos],a
+    jp      HighScoreEntryLoop
+.backspace
+    ld      a,[ScoreEntryCursorPos]
+    and     a
+    jr      nz,:+
+    ld      hl,ScoreEntryBuffer
+    ld      a," "
+    ld      [hl+],a
+    ld      [hl+],a
+    ld      [hl+],a
+    ld      [hl+],a
+    ld      [hl+],a
+    jp      HighScoreEntryLoop
+:   dec     a
+    ld      [ScoreEntryCursorPos],a
+    jp      HighScoreEntryLoop
+.endentry
+    rst     _WaitVBlank
+    xor     a
+    ldh     [rVBK],a
+    ld      hl,$98c0
+    ld      a," "
+    ld      b,SCRN_X_B
+    call    MemFillSmall
+    ld      hl,str_HighScores
+    ld      de,$98c5
+    call    Options_PrintString
+    
+    ; copy edit buffer to score table
+    ld      a,[Game_ScorePos]
+    ld      l,a
+    ld      c,a
+    ld      h,0
+    ld      b,h
+    add     hl,hl   ; x2
+    add     hl,hl   ; x4
+    add     hl,hl   ; x8
+    add     hl,bc   ; x9
+    ld      bc,Game_HighScores
+    add     hl,bc
+    ld      d,h
+    ld      e,l
+    ld      hl,ScoreEntryBuffer
+    ld      b,5
+    call    MemCopySmall
+    
+    call    RedrawHighScores
+    jp      HighScoreLoop
 
 HighScores_Default:
     db  "KARMA",0,5,0,0
