@@ -173,6 +173,7 @@ CheckForNewHighScore:
     ld      c,a
     ld      a,[hl+]
     or      c
+    ld      c,a
     pop     hl
     call    Math_Compare16
     jr      nc,.gotscore
