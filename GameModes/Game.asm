@@ -430,7 +430,7 @@ GameLoop:
     jr      z,:+
     dec     a
     ld      [Game_PlayerPos],a
-    play_sound_effect SFX_MenuCursor
+    ;play_sound_effect SFX_MenuCursor
 :   pop     af
     ret
 .right
@@ -440,7 +440,7 @@ GameLoop:
     jr      z,:+
     inc     a
     ld      [Game_PlayerPos],a
-    play_sound_effect SFX_MenuCursor
+    ;play_sound_effect SFX_MenuCursor
 :   pop     af
     ret
 .nextgem
@@ -451,7 +451,7 @@ GameLoop:
     jr      nz,:+
     xor     a
 :   ld      [Game_CurrentColor],a
-    play_sound_effect SFX_MenuCursor
+    ;play_sound_effect SFX_MenuCursor
     pop     af
     ret
 .prevgem
@@ -462,7 +462,7 @@ GameLoop:
     jr      nz,:+
     ld      a,4
 :   ld      [Game_CurrentColor],a
-    play_sound_effect SFX_MenuCursor
+    ;play_sound_effect SFX_MenuCursor
     pop     af
     ret
 
