@@ -318,6 +318,7 @@ ProgramStart:
     ld      [SFX_Priority],a
     xor     a
     ld      [SFX_Playing],a
+    ld      [GBM_SongID],a
     ld      [Game_OverMan],a
     
     ; enable double speed mode
