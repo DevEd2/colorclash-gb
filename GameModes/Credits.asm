@@ -123,11 +123,25 @@ GM_Credits:
 CreditsLoop:
     call    Pal_DoFade
     
+    ld      a,[hPressedButtons]
+    and     BTN_A | BTN_B | BTN_START | BTN_SELECT
+    jr      nz,.exit
+    
     ld      a,[Credits_State]
     and     a
     jr      z,Credits_SlideIn
     dec     a
     jr      z,Credits_Wait
+    jr      Credits_SlideOut
+.exit
+    call    PalFadeOutWhite
+:   rst     _WaitVBlank
+    call    Pal_DoFade
+    ld      a,[sys_FadeState]
+    bit     0,a
+    jr      nz,:-
+    jp      GM_Title
+    
 Credits_SlideOut:
     ld      a,[Credits_Timer]
     dec     a
@@ -182,14 +196,14 @@ Credits_Wait:
     dec     [hl]
     jr      z,Credits_ToSlideOut
     rst     _WaitVBlank
-    jr      CreditsLoop
+    jp      CreditsLoop
 Credits_ToSlideOut:
     ld      a,CreditsScrollTable.end-CreditsScrollTable
     ld      [Credits_Timer],a
     ld      a,2
     ld      [Credits_State],a
     rst     _WaitVBlank
-    jr      CreditsLoop
+    jp      CreditsLoop
 
 ; INPUT: hl = slide number
 Credits_DrawSlide:
