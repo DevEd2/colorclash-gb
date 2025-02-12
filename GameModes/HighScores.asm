@@ -424,11 +424,11 @@ HighScoreEntryLoop:
     jp      HighScoreLoop
 
 HighScores_Default:
-    db  "KARMA",0,5,0,0
-    db  "KARMA",0,4,0,0
-    db  "KARMA",0,3,0,0
-    db  "KARMA",0,2,0,0
-    db  "KARMA",0,1,0,0
+    db  "ABCDE",0,5,0,0
+    db  "ABCDE",0,4,0,0
+    db  "ABCDE",0,3,0,0
+    db  "ABCDE",0,2,0,0
+    db  "ABCDE",0,1,0,0
 
 str_HighScores:
     db  "HIGH SCORES",-1

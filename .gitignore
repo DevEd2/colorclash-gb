@@ -86,5 +86,5 @@ Temporary Items
 
 # Project-specific
 
-# nothing here yet
-
+# OpenMPT autosaves
+*.xm.AutoSave.*.xm

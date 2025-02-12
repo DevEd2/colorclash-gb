@@ -12,7 +12,7 @@
 def BUILD_DEBUG = 0
 def STACK_TOP = $e000
 
-def BUILD_LOGO = 0 ; 0 = Karma Studios, 1 = Revival Studios
+def BUILD_LOGO = 1 ; 0 = Karma Studios, 1 = Revival Studios
 def BUILD_NAME = 0 ; 0 = Colorclash, 1 = Avalanche
 
 def BIT_A           equ 0
