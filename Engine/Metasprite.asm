@@ -10,7 +10,7 @@ Sprite_\1:
 .sdef   include "GFX/\1.sdef"
 section "Sprite GFX - \1",romx,align[4]
 Sprite_\1_GFX:
-    incbin  "GFX/\1.2bpp"
+    incbin  "GFX/\1.2bpp.wle"
 .end
 endm
 
@@ -36,21 +36,21 @@ DrawMetasprite:
     push    bc
     ; get transfer size
     ld      a,[hl+]
-    ld      c,a
+;    ld      c,a
     ; get GFX pointer
     ld      a,[hl+]
-    ld      b,a
-    push    hl
-    ld      a,[hl+]
-    ld      h,[hl]
-    ld      l,a
-    ld      a,c
-    ld      c,1
-    push    bc
-    call    HDMA_AddToQueue
-    pop     bc
+;    ld      b,a
+;    push    hl
+;    ld      a,[hl+]
+;    ld      h,[hl]
+;    ld      l,a
+;    ld      a,c
+;    ld      c,1
+;    push    bc
+;    call    HDMA_AddToQueue
+;    pop     bc
     
-    pop     hl
+;    pop     hl
     inc     hl
     inc     hl
     pop     de

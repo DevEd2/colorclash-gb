@@ -217,6 +217,7 @@ Credits_DrawSlide:
     ld      l,a
     ld      de,_SCRN1
     lb      bc,13,4
+    rst     _WaitVBlank
     jp      LoadTilemapAttrSafe
  
 CreditsScrollTable:

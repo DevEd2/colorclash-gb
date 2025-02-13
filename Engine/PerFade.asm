@@ -1,5 +1,6 @@
 
 section "PerFade RAM",wram0,align[8]
+PerFadeRAMStart:
 sys_PalTransferBuf:
 sys_BGPalTransferBuf::  ds  (2*4)*8 ; 8 PalTransferBuf, 4 colors per palette, 2 bytes per color
 sys_ObjPalTransferBuf:: ds  (2*4)*8 ; 8 PalTransferBuf, 4 colors per palette, 2 bytes per color
@@ -12,6 +13,7 @@ sys_ObjPalettes:        ds  (2*4)*8 ; main OBJ palette
 sys_PalBuffersEnd:
 sys_FadeState::         db  ; bit 0 = fading, bit 1 = fade type (0 = white, 1 = black), bit 1 = fade dir (0 = in, 1 = out)
 sys_FadeLevel::         db  ; current intensity level
+PerFadeRAMEnd:
 
 macro   WaitForVRAM
     ldh     a,[rSTAT]

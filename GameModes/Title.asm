@@ -79,6 +79,13 @@ GM_Title:
     ld      a,bank(Sprite_titlespr)
     lb      de,11,18
     call    DrawMetasprite
+    ld      a,bank(Sprite_titlespr_GFX)
+    rst     _Bankswitch
+    ld      hl,Sprite_titlespr_GFX
+    ld      de,_VRAM
+    ld      a,1
+    ldh     [rVBK],a
+    call    DecodeWLE
     
     ld      a,LCDCF_ON | LCDCF_BGON | LCDCF_BG9800 | LCDCF_BG8000 | LCDCF_OBJON | LCDCF_OBJ8
     ldh     [rLCDC],a

@@ -294,12 +294,17 @@ ProgramStart:
     ld      b,40*4
     xor     a
     call    MemFillSmall
+    ; clear palette memory
+    ld      hl,PerFadeRAMStart
+    ld      bc,PerFadeRAMEnd-PerFadeRAMStart
+    ld      e,0
+    call    MemFill
     ; clear HDMA queue
-    ld      hl,HDMAQueue
-    ld      b,8*16
-    xor     a
-    call    MemFillSmall
-    call    HDMA_ResetQueue
+;    ld      hl,HDMAQueue
+;    ld      b,8*16
+;    xor     a
+;    call    MemFillSmall
+;    call    HDMA_ResetQueue
     ; Very Bad Amulator™ lockout
     ld      a,5
     add     a
@@ -773,7 +778,7 @@ DoVBlank:
 :   ; graphics updates
     call    UpdatePalettes
     call    hOAMDMA
-    call    HDMA_RunQueue
+;    call    HDMA_RunQueue
     ; clear OAM
 ;    ldh     a,[hPaused]
 ;    and     a
@@ -882,9 +887,9 @@ DoTimer:
 ; =============================================================================
 
 section "HDMA memory",wram0,align[0]
-HDMAQueue:      ds  8 * 16
-HDMAQueuePos:   db
-HDMASize:       db
+HDMAQueue:      ;ds  8 * 16
+HDMAQueuePos:   ;db
+HDMASize:       ;db
 
 section "HDMA routines",rom0
 
@@ -893,108 +898,109 @@ section "HDMA routines",rom0
 ;        c = destination VRAM bank
 ;        hl = source address
 HDMA_AddToQueue:
-    push    af
-    ld      a,[HDMAQueuePos]
-    cp      $10
-    jr      nc,.overflow
-    push    hl
-
-    ld      a,[HDMASize]
-    ld      l,a
-    ld      h,0
-    add     hl,hl   ; x2
-    add     hl,hl   ; x4
-    add     hl,hl   ; x8
-    add     hl,hl   ; x16
-    set     7,h
-
-    push    hl
-    ld      a,[HDMAQueuePos]
-    ld      l,a
-    ld      h,0
-    add     hl,hl   ; x2
-    add     hl,hl   ; x4
-    add     hl,hl   ; x8
-    ld      de,HDMAQueue
-    add     hl,de
-    pop     de
-
-    ld      a,b
-    ld      [hl+],a
-    ld      a,c
-    ld      [hl+],a
-    pop     bc
-    ld      a,b
-    ld      [hl+],a
-    ld      a,c
-    ld      [hl+],a
-    ld      a,d
-    ld      [hl+],a
-    ld      a,e
-    ld      [hl+],a
-    pop     af
-    ld      [hl+],a
-    ld      b,a
-    ld      a,[HDMASize]
-    add     b
-    ld      [HDMASize],a
-    ld      hl,HDMAQueuePos
-    inc     [hl]
-    ret
-.overflow
-    ld      b,b
-    pop     af
-    ret
+;    push    af
+;    ld      a,[HDMAQueuePos]
+;    cp      $10
+;    jr      nc,.overflow
+;    push    hl
+;
+;    ld      a,[HDMASize]
+;    ld      l,a
+;    ld      h,0
+;    add     hl,hl   ; x2
+;    add     hl,hl   ; x4
+;    add     hl,hl   ; x8
+;    add     hl,hl   ; x16
+;    set     7,h
+;
+;    push    hl
+;    ld      a,[HDMAQueuePos]
+;    ld      l,a
+;    ld      h,0
+;    add     hl,hl   ; x2
+;    add     hl,hl   ; x4
+;    add     hl,hl   ; x8
+;    ld      de,HDMAQueue
+;    add     hl,de
+;    pop     de
+;
+;    ld      a,b
+;    ld      [hl+],a
+;    ld      a,c
+;    ld      [hl+],a
+;    pop     bc
+;    ld      a,b
+;    ld      [hl+],a
+;    ld      a,c
+;    ld      [hl+],a
+;    ld      a,d
+;    ld      [hl+],a
+;    ld      a,e
+;    ld      [hl+],a
+;    pop     af
+;    ld      [hl+],a
+;    ld      b,a
+;    ld      a,[HDMASize]
+;    add     b
+;    ld      [HDMASize],a
+;    ld      hl,HDMAQueuePos
+;    inc     [hl]
+;    ret
+;.overflow
+;    ld      b,b
+;    pop     af
+;    ret
 
 HDMA_ResetQueue:
-    xor     a
-    ld      [HDMAQueuePos],a
-    ld      [HDMASize],a
-    ret
+;    xor     a
+;    ld      [HDMAQueuePos],a
+;    ld      [HDMASize],a
+;    ret
 
 ; Must be run during VBlank!
 HDMA_RunQueue:
-    ld      a,[HDMAQueuePos]
-    and     a
-    ret     z
-    ld      e,a
-    ld      hl,HDMAQueue
-    ldh     a,[hROMB0]
-    push    af
-.queueloop
-:   ld      a,[hl+]
-    and     a
-    jr      z,.nextslot
-    rst     _Bankswitch
-    ld      a,[hl+]
-    ldh     [rVBK],a
-    ld      a,[hl+]
-    ldh     [rHDMA1],a
-    ld      a,[hl+]
-    ldh     [rHDMA2],a
-    ld      a,[hl+]
-    ldh     [rHDMA3],a
-    ld      a,[hl+]
-    ldh     [rHDMA4],a
-    ld      a,[hl+]
-    set     7,a
-    ldh     [rHDMA5],a
-    inc     hl  ; skip dummy byte
-    dec     e
-    jr      nz,.queueloop
-    xor     a
-    call    HDMA_ResetQueue
-    pop     af
-    rst     _Bankswitch
     ret
-.nextslot
-    ld      a,l
-    add     7
-    ld      l,a
-    jr      nc,:+
-    inc     h
-:   dec     e
-    jr      nz,.queueloop
+;    ld      a,[HDMAQueuePos]
+;    and     a
+;    ret     z
+;    ld      e,a
+;    ld      hl,HDMAQueue
+;    ldh     a,[hROMB0]
+;    push    af
+;.queueloop
+;:   ld      a,[hl+]
+;    and     a
+;    jr      z,.nextslot
+;    rst     _Bankswitch
+;    ld      a,[hl+]
+;    ldh     [rVBK],a
+;    ld      a,[hl+]
+;    ldh     [rHDMA1],a
+;    ld      a,[hl+]
+;    ldh     [rHDMA2],a
+;    ld      a,[hl+]
+;    ldh     [rHDMA3],a
+;    ld      a,[hl+]
+;    ldh     [rHDMA4],a
+;    ld      a,[hl+]
+;    set     7,a
+;    ldh     [rHDMA5],a
+;    inc     hl  ; skip dummy byte
+;    dec     e
+;    jr      nz,.queueloop
+;    xor     a
+;    call    HDMA_ResetQueue
+;    pop     af
+;    rst     _Bankswitch
+;    ret
+;.nextslot
+;    ld      a,l
+;    add     7
+;    ld      l,a
+;    jr      nc,:+
+;    inc     h
+;:   dec     e
+;    jr      nz,.queueloop
 
 ; print a null-terminated string to DE
 ; INPUT: hl = pointer

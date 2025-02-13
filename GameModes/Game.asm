@@ -167,7 +167,7 @@ GameLoop:
     call    Pal_DoFade  ; too slow to run during VBlank, so do it here
     rst     _WaitVBlank
     ; draw beam
-    ; *MUST* be done during VBlank, so do it before everything else
+    ; if we aren't in vblank, bail out
     ld      b,Game_BeamMap.end-Game_BeamMap
     ld      de,$99e3
     ldh     a,[hGlobalTimer]
@@ -177,18 +177,28 @@ GameLoop:
     ld      a,bank(Game_BeamMap)
     rst     _Bankswitch
     ld      hl,Game_BeamMap
-:   ld      a,[hl+]
+    di      ; temporarily disable timer interrupt, since it can cause us to overshoot VBlank
+:   ldh     a,[rSTAT]
+    and     STATF_BUSY
+    jr      nz,:-
+    ld      a,[hl+]
     ld      [de],a
     inc     e
     dec     b
     jr      nz,:-
+    ei
     jr      .donebeam
 .off
-:   ld      a,$d
+    di      ; temporarily disable timer interrupt
+:   ldh     a,[rSTAT]
+    and     STATF_BUSY
+    jr      nz,:-
+    ld      a,$d
     ld      [de],a
     inc     e
     dec     b
     jr      nz,:-
+    ei
 .donebeam
 
     ; player controls
